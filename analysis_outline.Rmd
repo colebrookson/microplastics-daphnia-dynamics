@@ -1,0 +1,48 @@
+---
+title: "analysis_notes"
+author: "Cole"
+date: "5/20/2020"
+output: html_document
+---
+Analysis Plan
+
+Two important assumptions of direct effects on reproduction:
+
+1. there is an additional mortality during oogenesis (hazard model)
+2. OR there is an increase in the energy costs per egg (cost model)
+
+Three assumptions of indirect effects on reproduction
+
+    1. There is additional growth costs (growth model)
+    2. There is reduced incoming inergy (assimilation model)
+    3. There is additional maintenance costs (maintenance model)
+
+Model end points are body length $L$ or the scaled body length $l = L/L_m$ where $L_m$ is the control max body length and the reproduction rate $R$ (# of offspring per mother per time unit). These are expressed as functions of the two covariates: exposure time $t$ and the exposure concentration $c$. 
+
+There are 7 parameters of interest involved in the equations:
+
+1. max body length (Lm, milimetres)
+2. scaled body length at puberty (lp, dimensionless)
+3. von Bertalanffy growth rate (gamma, d^-1)
+4. max reproduction rate (Rm,   d^-1)
+5. the No effect concentration (NEC, mass L^-1)
+6. tolerance concentration (c* = H, R, A, G, or M according to the effect model)
+7. elimination rate (ke d-1)
+
+Lm, gamma, lp, and Rm are common to all organisms in an experiment and do not depend on concentration
+Lm, and Rm are not always reached by the organisms affected by a contaminant
+
+  End points body length and cumulative reproduction data supposedly follow normal distributions
+  for body length with a mean equal to the theoretical body length and a standard deviation (sigma g)
+  and the cum. reprod with a mean equal to the cumulative number of offspring per mother and a standard deviation sigma r
+  Sigma g represents the invidual variability of body length data with variability between beakers ignored
+  and sigma r represents the variability of reproduction between beakers. Scaled length (lh,i) and reproduction rate, Rh,i,
+  which are usually end points in DEBtox models are latent variables in the Bayesian framework and depend directly on parameters
+
+## Equations
+
+For the control organisms:
+$$\frac{dl}{dt} = \gamma(f-1)$$
+
+$$ R = \frac{R_M}{l-l^3_{p}} * (fl^2 \frac{g+l}{g+f} - l^3_{p})$$
+
