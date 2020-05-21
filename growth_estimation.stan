@@ -1,24 +1,21 @@
 functions{
   real[] dZ_dt(
-    real t, // Time
-    real[] Z, // System state {Parasite, Host}
-    real[] theta, // Parms
-    real[] x_r, // Real data; below is integer data
-    int[] x_i){
-    real P = Z[1]; // System state coded as an array, such that Z = (P,H)
-    real H = Z[2];
-
-    real r = theta[1];  // Parameters of the system, in order they appear
-    real O = theta[2];
-    real h = theta[3];
-    real b = theta[4];
-    real c = theta[5];
-    real u = theta[6];
+    real t, // time values
+    real [] Z, // System state (length, reproductive rate)
+    real [] theta, // parameters
+    real [] dat, // data
+    int [] dat_i) {
+    real l = Z[1]; // system, length
+    real R = Z[2]; // system, reproductive rate
+    
+    real r = theta[1]; // von bertalanffy growth rate 
+    real sA = theta[2]; // 
+    
+    }
 
     real dl_dt = r*(2/(2 - sA))*(1-sA - l);
-    real dH_dt = b + H*(c*(O*P/(1 + O*P*h))-u);
-    return({dP_dt,dH_dt}); // Return the system state
-  }
+    real R_r = b + H*(c*(O*P/(1 + O*P*h))-u);
+    return({dl_dt,R_r}); // Return the system state
 }
 
 data{
