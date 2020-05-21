@@ -15,7 +15,7 @@ functions{
     real c = theta[5];
     real u = theta[6];
 
-    real dP_dt = P*r - H*(O*P/(1 + O*P*h)); // Mechanistic model
+    real dl_dt = r*(2/(2 - sA))*(1-sA - l);
     real dH_dt = b + H*(c*(O*P/(1 + O*P*h))-u);
     return({dP_dt,dH_dt}); // Return the system state
   }
