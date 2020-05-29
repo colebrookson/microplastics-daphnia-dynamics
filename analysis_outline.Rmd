@@ -30,7 +30,7 @@ $$ REPRODUCTION: R = \frac{R_M}{1-l^3_p}\left(fl^2\frac{g + l}{g + f}-l^3_p\righ
 $$ GROWTH: \frac{dl}{dt} = r(f-l)$$
 $$ REPRODUCTION: R = \frac{R_M}{1-l^3_p}\left(fl^2\frac{g + l}{g + f}-l^3_p\right)e^{-s}$$
 
-Model end points are body length $L$ (or the scaled body length $l = \frac{L}{L_m}$, where $L_m$ is the control max body length) and the reproduction rate $R$ (number of offspring per mother per time unit). These are functions of exposure time $t$ and exposure concentration $c$. So thee are seven parameters:
+Model end points are body length $L$ (or the scaled body length $l = \frac{L}{L_m}$, where $L_m$ is the control max body length) and the reproduction rate $R$ (number of offspring per mother per time unit). These are functions of exposure time $t$ and exposure concentration $c$. So there are nine parameters:
 
 1. $L_m$ - max body length
 2. $l_p$ - scaled body length at puberty
@@ -39,6 +39,8 @@ Model end points are body length $L$ (or the scaled body length $l = \frac{L}{L_
 5. $NEC$ - the No Effect Concentration
 6. $c_*$ - tolerance concentration (according to the effect model)
 7. $k_e$ - elimination rate
+8. $f$ - reference value for control organisms at optimal temperature - assumed to be 1
+9. $g$ - investment ratio - fixed at 1
 
 $L_m, r, l_p, R_M$ are common to all organisms. In addition, the theoretical scaled length $l_{h,i}$, and reproduction rate $R_{h,i}$ are latent variables in this framework. The scaled concentration in the organisms $c_{q}$ is defined as $\frac{dc_q}{dt} = k_e(c-c_q)$. 
 
@@ -79,7 +81,7 @@ Lm, and Rm are not always reached by the organisms affected by a contaminant
   for body length with a mean equal to the theoretical body length and a standard deviation (sigma g)
   and the cum. reprod with a mean equal to the cumulative number of offspring per mother and a standard deviation sigma r
   Sigma g represents the invidual variability of body length data with variability between beakers ignored
-  and sigma r represents the variability of reproduction between beakers. Scaled length (lh,i) and reproduction rate, Rh,i,
+  and sigma r represents the variability of reproduction between beakers. Scaled length (lh,i) and reproduction rate, Rh,i, 
   which are usually end points in DEBtox models are latent variables in the Bayesian framework and depend directly on parameters
 
 ## Equations
@@ -88,4 +90,20 @@ For the control organisms:
 $$\frac{dl}{dt} = r(f-1)$$
 
 $$ R = \frac{R_M}{l-l^3_{p}} * (fl^2 \frac{g+l}{g+f} - l^3_{p})$$
+The stress induced by the toxicant is modeled as a stress function $s(c_q(t,c))$ where $c_q$ is the internal concentration scaled by a bioconcentration factor, so that $c_q$ is homogeneous to an exposure concentration. $s(c_q(t,c))$ is positive when the scaled concentration exceeds an exposure concentration called the No Effect Concentration (NEC), and null otherwise. 
+$$s(c_q) = c^{-1}_*(c_q - NEC)_+$$
+with $(c_q-NEC)_+ = max(0, c_q-NEC)$. $c_*$ is the tolerance concentration. $* = A, G, M, R, or H$ depending on the effect model considered. The scaled concentration inside the organism ($c_q$) follows:
+$$\frac{dc_q}{dt} = k_e(c-c_q) $$
+where $k_e$ is the elimination rate and $c$ is the exposure concentration. 
+
+
+
+
+
+
+
+
+
+
+
 
