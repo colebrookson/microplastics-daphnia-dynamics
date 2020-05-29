@@ -2,33 +2,52 @@
 title: "Analysis Plan"
 author: "Cole B. Brookson"
 date: "5/20/2020"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 ## Step by Step for Bayesian DEBtox Model Fitting
+
+### General Idea
+
+Whole idea is to calculate two things: 
+
+1. The probability $S(t,c)$ to be alive at time $t$ and exposure concentration $c$ given by:
+$$ S(t,c) = ((1-m)(1-s_A(c)))^t$$ 
+where $m$ is the blank daily probability of death 
+2. Calculate the DEBtox reproduction functions $R_F(t,c)$ as calibrated for *D. magna*. 
+
+From those two things, we then go to an age-based matrix model where for each generation, daphnids move from age *i* to *i+1* according to age and generation (F0, F1, F2, F3) specific survival rates, $P_{i,F}(c)$, calculated considering the survival function $S_{F}(t,c)$ given in 1. above, where: 
+$$P_{i,F}(c) = \frac{S_F(t(i+1),c)}{S_F(t(i),c)}$$
+In addition, age- and generation-specific fecundty rates $Fec_{i,F}(c)$ are calculated from the reproduction functions $R_F(t,c)$. Assumed is a birth pulse model and a prebreeding census:
+$$FEC_{i,F}(c) = \int_{i}^{i+1}P_{1,F}(c)R_F(t-3,c)dt $$
+Goal is to then get $\lambda$ from Leslie matrix. Then, explore cases where the population goes extinct. Use some sort of approach (MC simulations?) to account for model uncertainty at organism level. For each generation, draw 1000 parameter from their joint posterior distribution and for each parameter set, survival and fecundity rates are calculated over the rate of concentrations and the corresponding $\lambda$ and extinction probability are derived.
 
 ### Individual-level Modeling
 
 Goal of the individual-level model is to quantify effects of microplastics on growth and reproduction via the DEBtox model. There are 5 models of the DEBtox framework, two direct effect models (hazard & costs) and three indirect models (growth, assimilation, maintenance).
+
 #### Growth:
 $$ GROWTH: \frac{dl}{dt} = r\frac{f+g}{f + g(l+s)}(f-l)$$
 $$ REPRODUCTION: R = \frac{R_M}{1-l^3_p} \left( fl^2\frac{g(1+s) + l}{g(1+s) + f}-l^3_p\right)$$
-#### Assimilation:
-$$ GROWTH: \frac{dl}{dt} = r\frac{f+g}{f(1-s)+g}(f(1-s)-l)$$
 
-$$ REPRODUCTION: R = \frac{R_M}{1-l^3_p}\left(f(1-s)l^2\frac{g+ l}{g+g(1-s)}-l^3_p\right)$$
+#### Assimilation:
+$$ \frac{dl}{dt} = r\frac{f+g}{f(1-s)+g}(f(1-s)-l)$$
+
+$$ R = \frac{R_M}{1-l^3_p}\left(f(1-s)l^2\frac{g+ l}{g+g(1-s)}-l^3_p\right)$$
 
 #### Maintenance:
-$$ GROWTH: \frac{dl}{dt} = r(f-l(1+s))$$
+$$ \frac{dl}{dt} = r(f-l(1+s))$$
 
-$$ REPRODUCTION: R = \frac{R_M}{1-l^3_p}(1+s)\left(fl^2\frac{g(1+s)^{-1} + l}{g+ f}-l^3_p\right)$$
+$$ R = \frac{R_M}{1-l^3_p}(1+s)\left(fl^2\frac{g(1+s)^{-1} + l}{g+ f}-l^3_p\right)$$
 
 #### Costs:
-$$ GROWTH: \frac{dl}{dt} = r(f-l)$$
-$$ REPRODUCTION: R = \frac{R_M}{1-l^3_p}\left(fl^2\frac{g + l}{g + f}-l^3_p\right)(1+s)^{-1}$$
+$$ \frac{dl}{dt} = r(f-l)$$
+$$ R = \frac{R_M}{1-l^3_p}\left(fl^2\frac{g + l}{g + f}-l^3_p\right)(1+s)^{-1}$$
 
 #### Hazard:
-$$ GROWTH: \frac{dl}{dt} = r(f-l)$$
-$$ REPRODUCTION: R = \frac{R_M}{1-l^3_p}\left(fl^2\frac{g + l}{g + f}-l^3_p\right)e^{-s}$$
+$$ \frac{dl}{dt} = r(f-l)$$
+$$ R = \frac{R_M}{1-l^3_p}\left(fl^2\frac{g + l}{g + f}-l^3_p\right)e^{-s}$$
 
 Model end points are body length $L$ (or the scaled body length $l = \frac{L}{L_m}$, where $L_m$ is the control max body length) and the reproduction rate $R$ (number of offspring per mother per time unit). These are functions of exposure time $t$ and exposure concentration $c$. So there are nine parameters:
 
@@ -45,11 +64,7 @@ Model end points are body length $L$ (or the scaled body length $l = \frac{L}{L_
 $L_m, r, l_p, R_M$ are common to all organisms. In addition, the theoretical scaled length $l_{h,i}$, and reproduction rate $R_{h,i}$ are latent variables in this framework. The scaled concentration in the organisms $c_{q}$ is defined as $\frac{dc_q}{dt} = k_e(c-c_q)$. 
 
 The stress induced by the toxicant (plastic in our case) is modeled as a stress function $s(c_q(t,c))$ where $c_q$ is the internal concentration scaled by a bioconcentration factor, so that $c_q$ is homogenous to an exposure concentration. The value of the stress function is positive when the scaled concentration inside the organisms ($c_q$), exceeds the NEC. This is modeled by 
-$$s(c_q) = c^{-1}_* (c_q - NEC)_+$$ where $(c_q-NEC)_+ = max(0, c_q - NEC)$. c_* is the tolerance concentration, where $* = A, G, M, R, or H$ depending on the effect model considered. 
-
-
-
-
+$$s(c_q) = c^{-1}_* (c_q - NEC)_+$$ where $(c_q-NEC)_+ = max(0, c_q - NEC)$. $c_*$ is the tolerance concentration, where $* = A, G, M, R, or H$ depending on the effect model considered. 
 
 Two important assumptions of direct effects on reproduction:
 
@@ -77,14 +92,14 @@ There are 7 parameters of interest involved in the equations:
 Lm, gamma, lp, and Rm are common to all organisms in an experiment and do not depend on concentration
 Lm, and Rm are not always reached by the organisms affected by a contaminant
 
-  End points body length and cumulative reproduction data supposedly follow normal distributions
-  for body length with a mean equal to the theoretical body length and a standard deviation (sigma g)
-  and the cum. reprod with a mean equal to the cumulative number of offspring per mother and a standard deviation sigma r
-  Sigma g represents the invidual variability of body length data with variability between beakers ignored
-  and sigma r represents the variability of reproduction between beakers. Scaled length (lh,i) and reproduction rate, Rh,i, 
-  which are usually end points in DEBtox models are latent variables in the Bayesian framework and depend directly on parameters
+End points body length and cumulative reproduction data supposedly follow normal distributions
+for body length with a mean equal to the theoretical body length and a standard deviation (sigma g)
+and the cum. reprod with a mean equal to the cumulative number of offspring per mother and a standard deviation sigma r
+Sigma g represents the invidual variability of body length data with variability between beakers ignored
+and sigma r represents the variability of reproduction between beakers. Scaled length (lh,i) and reproduction rate, Rh,i, 
+which are usually end points in DEBtox models are latent variables in the Bayesian framework and depend directly on parameters
 
-## Equations
+### Control Equations
 
 For the control organisms:
 $$\frac{dl}{dt} = r(f-1)$$
@@ -98,6 +113,7 @@ where $k_e$ is the elimination rate and $c$ is the exposure concentration.
 
 
 
+ 
 
 
 
