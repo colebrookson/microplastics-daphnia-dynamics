@@ -116,8 +116,9 @@ where $k_e$ is the elimination rate and $c$ is the exposure concentration.
 So first thing is to estimate the survival functiion for reproduction, alongside the $\frac{dl}{dt}$ and R equations. However, we need estimates for the NEC values for both the reproduction one as well as the survival one. So, to do this, we'll do a separate little Bayesian estimation. Following the line of Fox (2010 - Ecotox & Env. Safety)
 
 This will be done for each generation individually. For survival, the probability is taken to be binomial. So we consider the proportion of individuals surviving at concentration $x_i$ to be $P_i = \frac{Y_i}{n_i}$ where $Y$ is the number of individuals alive and $n$ is the number of initial individuals. The expectation, $E$, of $P_i$ is $\theta_i$ the *true* proportion, and thus, $$E[P_i] = \theta_i = \alpha*exp^{-\beta(x_i - \gamma)I(x_i - \gamma)}$$
-where $\alpha$ is a 'basal' response (response at zero/low-dose concentrations), $\beta$ is the rate of decay in the response, and $\gamma$ is the threshold. The data ${x_i, y_i}$ where $x$ is the concentration, and $y$ is the observed response. 
+where $\alpha$ is a 'basal' response (response at zero/low-dose concentrations), $\beta$ is the rate of decay in the response, and $\gamma$ is the threshold. The data ${x_i, y_i}$ where $x$ is the concentration, and $y$ is the observed response. Note that $I(z)$ is simply 1 if $z > 0$ and 0 otherwise. 
 
+For the stan model, the model is written with a binomial response variable, and $\alpha$, $\beta$, and $\gamma$ are all modeed with gamma distributions, $G(0.0001, 0.0001)$. 
 
  
 

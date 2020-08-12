@@ -1,3 +1,14 @@
+########## 
+##########
+# This code contains the analysis for the fitting of the NEC parameter as a
+# part of the larger analysis of the effect of microplastics on daphnia
+##########
+##########
+# AUTHOR: Cole B. Brookson
+# DATE OF CREATION: 2020-07-04
+##########
+##########
+
 library(here)
 library(tidyverse)
 library(rstan)
@@ -28,29 +39,5 @@ for(i in unique(offspring$generation)) {
   rm(temp)
 } 
 
-write('
-data {
-  int <lower = 0> N; // sample size    
-  vector[N] x; // concentration                 
-  vector[N] y; // response (death rate)            
-  real<lower = 0> y[N, 2];    
-}
-
-parameters {
-  real <lower = 0> a; // basal response    
-  real <lower = 0> b; // rate of decay of the response  
-  real <lower = 0> g; // threshold of NEC   
-}
-
-model {
-  a ~ gamma(0.0001, 0.0001) // arguments are alpha, beta
-  b ~ gamma(0.0001, 0.0001)
-  g ~ gamma(0.0001, 0.0001)
-  
-  y ~ binomial 
-}
-generated quantities {
-  }
-}', 
-here('./code/stan_files/nec_estimation.stan'))
+nec_model = stan_model(file = here('./code/stan_files/nec_estimation.stan'))
 
