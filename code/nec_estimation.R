@@ -39,5 +39,6 @@ for(i in unique(offspring$generation)) {
   rm(temp)
 } 
 
-nec_model = stan_model(file = here('./code/stan_files/nec_estimation.stan'))
+#nec_model = stan_model(file = here('./code/stan_files/nec_estimation.stan'))
 
+nec_fit
