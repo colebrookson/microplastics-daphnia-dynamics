@@ -12,7 +12,7 @@
 data {
   int <lower = 0> n; // sample size    
   vector[n] x; // concentration                 
-  int y; // response (death rate)            
+  int y[n]; // response (death rate)            
  
 }
 
@@ -25,7 +25,7 @@ parameters {
 }
 
 model {
-  //declare the response
+  //declare the response, proportion of surviving/original
   vector[n] yhat;
   
   
