@@ -56,15 +56,16 @@ nec_fit_data_f0 = nec_fit_data_f0 %>%
   rename(x = treatment, y = survival)
 
 #put into a list
-n = nrow(nec_fit_data_f0)
+num = nrow(nec_fit_data_f0)
 x = nec_fit_data_f0$x
 y = nec_fit_data_f0$y
-nec_fit_data_f0_sample = list(n=n,
+nec_fit_data_f0_sample = list(num=num,
                               x=x,
                               y=y)
-
+### read in model
 nec_model = stan_model(file = here('./code/stan_files/nec_estimation.stan'))
 
+### fit model
 nec_fit = sampling(nec_model, 
                    data = nec_fit_data_f0_sample, 
                    seed = 12); beep(3)

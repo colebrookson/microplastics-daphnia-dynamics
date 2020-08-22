@@ -10,9 +10,9 @@
 ////////////////////
 
 data {
-  int <lower = 0> n; // sample size    
-  vector[n] x; // concentration                 
-  int y[n]; // response (death rate)            
+  int <lower = 0> num; // sample size    
+  vector[num] x; // concentration                 
+  int y[num]; // response (death rate)            
  
 }
 
@@ -26,7 +26,7 @@ parameters {
 
 model {
   //declare the response, proportion of surviving/original
-  vector[n] yhat;
+  vector[num] yhat;
   
   
   //priors
@@ -36,13 +36,13 @@ model {
   theta ~ beta(1,1);
   
   //define the mean
-  for(i in 1:n) {
-  //define likilihood/probability model
+  for(i in 1:num) {
+  //define model in loop to look at yhat
   yhat[i] = a * exp(-b * (x[i] - g) * int_step(x[i] - g));
   
   }
   
-  //define likilihood/probability model
+  //define model outside loop to get estimate of y
   y ~ bernoulli_logit(yhat);
   
 }
