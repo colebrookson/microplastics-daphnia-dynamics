@@ -10,9 +10,10 @@
 ////////////////////
 
 data {
-  int <lower = 0> num; // sample size    
-  vector[num] x; // concentration                 
-  int y[num]; // response (death rate)            
+  int <lower = 0> N; // sample size    
+  vector[N] x; // concentration                 
+  int <lower = 0> y[N]; // response (death rate) 
+  real n[N]; // Nber of individuals
  
 }
 
@@ -24,9 +25,19 @@ parameters {
   
 }
 
+transformed parameters {
+    //declare the response, proportion of surviving/original
+  vector[N] yhat;
+  
+  //define the mean
+  for(i in 1:N) {
+  //define model in loop to look at yhat, int_step works like step in jags
+  yhat[i] = a * exp(-b * (x[i] - g) * int_step(x[i] - g)); //
+  }
+}
+
 model {
-  //declare the response, proportion of surviving/original
-  vector[num] yhat;
+
   
   
   //priors
@@ -35,15 +46,10 @@ model {
   g ~ gamma(0.0001, 0.0001);
   theta ~ beta(1,1);
   
-  //define the mean
-  for(i in 1:num) {
-  //define model in loop to look at yhat
-  yhat[i] = a * exp(-b * (x[i] - g) * int_step(x[i] - g));
-  
-  }
-  
+
   //define model outside loop to get estimate of y
-  y ~ bernoulli_logit(yhat);
+  y ~ binomial_logit(n, yhat);
+  
   
 }
 

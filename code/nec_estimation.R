@@ -58,8 +58,10 @@ nec_fit_data_f0 = nec_fit_data_f0 %>%
 #put into a list
 num = nrow(nec_fit_data_f0)
 x = nec_fit_data_f0$x
-y = nec_fit_data_f0$y
+y = (nec_fit_data_f0$y/100)*20
+n = rep(20,100)
 nec_fit_data_f0_sample = list(num=num,
+                              n=n,                                              
                               x=x,
                               y=y)
 ### read in model
