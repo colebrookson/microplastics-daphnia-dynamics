@@ -16,6 +16,8 @@ library(gdata)
 library(bayesplot)
 library(brms)
 library(beepr)
+library(parallel)
+detectCores()
 
 ### read in data
 dir = 'C:/Users/brookson/Documents/Github/Schur-etal-Data' #private data repo
@@ -68,9 +70,14 @@ nec_fit_data_f0_sample = list(N=N,
 nec_model = stan_model(file = here('./code/stan_files/nec_estimation.stan'))
 
 ### fit model
+stan(control = list(adapt_delta = 0.99))
 nec_fit = sampling(nec_model, 
                    data = nec_fit_data_f0_sample, 
-                   seed = 12); beep(3)
+                   seed = 12,
+                   chains = 10,
+                   warmup = 5000,
+                   iter = 10000,
+                   cores = 10,); beep(3)
 
 ### diagnose model fit
 nec_fit_summ = print(nec_fit, 
@@ -82,6 +89,7 @@ nec_fit_params = c('a', 'b', 'g')
 nec_fit_output = rstan::extract(nec_fit_summ,
                                 permuted=TRUE,
                                 include=TRUE)
+pairs(nec_fit, pars = c('a', 'b', 'g'), las = 1)
 #look at the parameters
 nec_fit_trace = stan_trace(nec_fit, nec_fit_params)
 nec_fit_dens = mcmc_dens(nec_fit, nec_fit_params)
