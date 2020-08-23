@@ -13,7 +13,7 @@ data {
   int <lower = 0> N; // sample size    
   vector[N] x; // concentration                 
   int <lower = 0> y[N]; // response (death rate) 
-  real n[N]; // Nber of individuals
+  int n[N]; // Numberer of individuals
  
 }
 
@@ -26,13 +26,13 @@ parameters {
 }
 
 transformed parameters {
-    //declare the response, proportion of surviving/original
+  //declare the response, proportion of surviving/original
   vector[N] yhat;
   
-  //define the mean
   for(i in 1:N) {
-  //define model in loop to look at yhat, int_step works like step in jags
-  yhat[i] = a * exp(-b * (x[i] - g) * int_step(x[i] - g)); //
+    
+  yhat[i] = a * exp((-b * (x[i] - g)) * int_step(x[i] - g)); 
+  
   }
 }
 
