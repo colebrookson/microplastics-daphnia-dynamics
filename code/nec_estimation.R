@@ -67,17 +67,27 @@ nec_fit_data_f0_sample = list(N=N,
                               x=x,
                               y=y)
 ### read in model
-nec_model = stan_model(file = here('./code/stan_files/nec_estimation.stan'))
+#nec_model = stan_model(file = here('./code/stan_files/nec_estimation.stan'))
 
 ### fit model
-stan(control = list(adapt_delta = 0.99))
-nec_fit = sampling(nec_model, 
-                   data = nec_fit_data_f0_sample, 
-                   seed = 12,
-                   chains = 10,
-                   warmup = 5000,
-                   iter = 10000,
-                   cores = 10,); beep(3)
+nec_fit = stan(file = here('./code/stan_files/nec_estimation.stan'),
+               data = nec_fit_data_f0_sample,
+               chains = 8,
+               cores = 8,
+               warmup = 1000,
+               iter = 2000,
+               seed = 12,
+               verbose = TRUE,
+               open_progress = interactive() && !isatty(stdout()) &&
+                 !identical(Sys.getenv("RSTUDIO"), "1"),
+               control = list(adapt_delta = 0.99)); beep(3)
+# nec_fit = sampling(nec_model, 
+#                     
+#                    seed = 12,
+#                    chains = 10,
+#                    warmup = 5000,
+#                    iter = 10000,
+#                    cores = 10,); beep(3)
 
 ### diagnose model fit
 nec_fit_summ = print(nec_fit, 
