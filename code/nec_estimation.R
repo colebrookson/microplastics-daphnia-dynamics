@@ -74,13 +74,12 @@ nec_fit = stan(file = here('./code/stan_files/nec_estimation.stan'),
                data = nec_fit_data_f0_sample,
                chains = 8,
                cores = 8,
-               warmup = 1000,
-               iter = 2000,
+               warmup = 5000,
+               iter = 10000,
                seed = 12,
                verbose = TRUE,
-               open_progress = interactive() && !isatty(stdout()) &&
-                 !identical(Sys.getenv("RSTUDIO"), "1"),
-               control = list(adapt_delta = 0.99)); beep(3)
+               #open_progress = TRUE,
+               control = list(adapt_delta = 0.9999)); beep(3)
 # nec_fit = sampling(nec_model, 
 #                     
 #                    seed = 12,
