@@ -120,6 +120,10 @@ where $\alpha$ is a 'basal' response (response at zero/low-dose concentrations),
 
 For the stan model, the model is written with a binomial response variable, and $\alpha$, $\beta$, and $\gamma$ are all modeed with gamma distributions, $G(0.0001, 0.0001)$. 
 
+**NOTE:** So note that fitting this was almost impossible -- the gradient of the data is probably just too small.
+
+
+
  
 
 
