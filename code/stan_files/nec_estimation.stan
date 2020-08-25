@@ -41,7 +41,7 @@ model {
   //priors
   a ~ gamma(0.0001, 0.0001); // arguments are alpha, beta
   b ~ gamma(0.0001, 0.0001);
-  g ~ gamma(0.0001, 0.0001);
+  g ~ uniform(0, 10);
 
   //define model outside loop to get estimate of y
   y ~ binomial_logit(n, yhat);
