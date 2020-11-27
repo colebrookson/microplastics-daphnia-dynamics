@@ -122,6 +122,14 @@ For the stan model, the model is written with a binomial response variable, and 
 
 **NOTE:** So note that fitting this was almost impossible -- the gradient of the data is probably just too small.
 
+## Organism-level modelling
+
+Growth and reproduction models need to be fit simultaneously because they're independent. The three equations are (for the growth model, using this model in assumption from Eltemsah & Bohn 2018 - Env. Poll.): 
+
+$$s_A(c) = max(0, k_A(c - NEC_A))$$
+$$\frac{dl}{dt}(t,c) = r\frac{f+g}{f + g(l(t,c)+s_A(c))}(f-l(t,c))$$
+$$R(t, c) = \frac{R_M}{1-l(t,c)^3_p} \left( fl(t,c)^2\frac{g(1+s_A(c)) + l(t,c)}{g(1+s_A(c)) + f}-l(t,c)^3_p\right)$$
+where $R(t,c) = 0$ otherwise with $R(0,c) = 0$. 
 
 
  
