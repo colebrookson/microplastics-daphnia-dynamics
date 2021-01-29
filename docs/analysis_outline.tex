@@ -1,0 +1,317 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Analysis Plan},
+  pdfauthor={Cole B. Brookson},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+
+\title{Analysis Plan}
+\author{Cole B. Brookson}
+\date{5/20/2020}
+
+\begin{document}
+\maketitle
+
+\hypertarget{step-by-step-for-bayesian-debtox-model-fitting}{%
+\subsection{Step by Step for Bayesian DEBtox Model
+Fitting}\label{step-by-step-for-bayesian-debtox-model-fitting}}
+
+\hypertarget{general-idea}{%
+\subsubsection{General Idea}\label{general-idea}}
+
+Whole idea is to calculate two things:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The probability \(S(t,c)\) to be alive at time \(t\) and exposure
+  concentration \(c\) given by: \[ S(t,c) = ((1-m)(1-s_A(c)))^t\] where
+  \(m\) is the blank daily probability of death
+\item
+  Calculate the DEBtox reproduction functions \(R_F(t,c)\) as calibrated
+  for \emph{D. magna}.
+\end{enumerate}
+
+From those two things, we then go to an age-based matrix model where for
+each generation, daphnids move from age \emph{i} to \emph{i+1} according
+to age and generation (F0, F1, F2, F3) specific survival rates,
+\(P_{i,F}(c)\), calculated considering the survival function
+\(S_{F}(t,c)\) given in 1. above, where:
+\[P_{i,F}(c) = \frac{S_F(t(i+1),c)}{S_F(t(i),c)}\] In addition, age- and
+generation-specific fecundty rates \(Fec_{i,F}(c)\) are calculated from
+the reproduction functions \(R_F(t,c)\). Assumed is a birth pulse model
+and a prebreeding census:
+\[FEC_{i,F}(c) = \int_{i}^{i+1}P_{1,F}(c)R_F(t-3,c)dt \] Goal is to then
+get \(\lambda\) from Leslie matrix. Then, explore cases where the
+population goes extinct. Use some sort of approach (MC simulations?) to
+account for model uncertainty at organism level. For each generation,
+draw 1000 parameter from their joint posterior distribution and for each
+parameter set, survival and fecundity rates are calculated over the rate
+of concentrations and the corresponding \(\lambda\) and extinction
+probability are derived.
+
+\hypertarget{individual-level-modeling}{%
+\subsubsection{Individual-level
+Modeling}\label{individual-level-modeling}}
+
+Goal of the individual-level model is to quantify effects of
+microplastics on growth and reproduction via the DEBtox model. There are
+5 models of the DEBtox framework, two direct effect models (hazard \&
+costs) and three indirect models (growth, assimilation, maintenance).
+
+\hypertarget{growth}{%
+\paragraph{Growth:}\label{growth}}
+
+\[ GROWTH: \frac{dl}{dt} = r\frac{f+g}{f + g(l+s)}(f-l)\]
+\[ REPRODUCTION: R = \frac{R_M}{1-l^3_p} \left( fl^2\frac{g(1+s) + l}{g(1+s) + f}-l^3_p\right)\]
+
+\hypertarget{assimilation}{%
+\paragraph{Assimilation:}\label{assimilation}}
+
+\[ \frac{dl}{dt} = r\frac{f+g}{f(1-s)+g}(f(1-s)-l)\]
+
+\[ R = \frac{R_M}{1-l^3_p}\left(f(1-s)l^2\frac{g+ l}{g+g(1-s)}-l^3_p\right)\]
+
+\hypertarget{maintenance}{%
+\paragraph{Maintenance:}\label{maintenance}}
+
+\[ \frac{dl}{dt} = r(f-l(1+s))\]
+
+\[ R = \frac{R_M}{1-l^3_p}(1+s)\left(fl^2\frac{g(1+s)^{-1} + l}{g+ f}-l^3_p\right)\]
+
+\hypertarget{costs}{%
+\paragraph{Costs:}\label{costs}}
+
+\[ \frac{dl}{dt} = r(f-l)\]
+\[ R = \frac{R_M}{1-l^3_p}\left(fl^2\frac{g + l}{g + f}-l^3_p\right)(1+s)^{-1}\]
+
+\hypertarget{hazard}{%
+\paragraph{Hazard:}\label{hazard}}
+
+\[ \frac{dl}{dt} = r(f-l)\]
+\[ R = \frac{R_M}{1-l^3_p}\left(fl^2\frac{g + l}{g + f}-l^3_p\right)e^{-s}\]
+
+Model end points are body length \(L\) (or the scaled body length
+\(l = \frac{L}{L_m}\), where \(L_m\) is the control max body length) and
+the reproduction rate \(R\) (number of offspring per mother per time
+unit). These are functions of exposure time \(t\) and exposure
+concentration \(c\). So there are nine parameters:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \(L_m\) - max body length
+\item
+  \(l_p\) - scaled body length at puberty
+\item
+  \(r\) - von Bertalanffy growth rate
+\item
+  \(R_M\) - maximum reproduction rate
+\item
+  \(NEC\) - the No Effect Concentration
+\item
+  \(c_*\) - tolerance concentration (according to the effect model)
+\item
+  \(k_e\) - elimination rate
+\item
+  \(f\) - reference value for control organisms at optimal temperature -
+  assumed to be 1
+\item
+  \(g\) - investment ratio - fixed at 1
+\end{enumerate}
+
+\(L_m, r, l_p, R_M\) are common to all organisms. In addition, the
+theoretical scaled length \(l_{h,i}\), and reproduction rate \(R_{h,i}\)
+are latent variables in this framework. The scaled concentration in the
+organisms \(c_{q}\) is defined as \(\frac{dc_q}{dt} = k_e(c-c_q)\).
+
+The stress induced by the toxicant (plastic in our case) is modeled as a
+stress function \(s(c_q(t,c))\) where \(c_q\) is the internal
+concentration scaled by a bioconcentration factor, so that \(c_q\) is
+homogenous to an exposure concentration. The value of the stress
+function is positive when the scaled concentration inside the organisms
+(\(c_q\)), exceeds the NEC. This is modeled by
+\[s(c_q) = c^{-1}_* (c_q - NEC)_+\] where
+\((c_q-NEC)_+ = max(0, c_q - NEC)\). \(c_*\) is the tolerance
+concentration, where \(* = A, G, M, R, or H\) depending on the effect
+model considered.
+
+Two important assumptions of direct effects on reproduction:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  there is an additional mortality during oogenesis (hazard model)
+\item
+  OR there is an increase in the energy costs per egg (cost model)
+\end{enumerate}
+
+Three assumptions of indirect effects on reproduction
+
+\begin{verbatim}
+1. There is additional growth costs (growth model)
+2. There is reduced incoming inergy (assimilation model)
+3. There is additional maintenance costs (maintenance model)
+\end{verbatim}
+
+Model end points are body length \(L\) or the scaled body length
+\(l = L/L_m\) where \(L_m\) is the control max body length and the
+reproduction rate \(R\) (\# of offspring per mother per time unit).
+These are expressed as functions of the two covariates: exposure time
+\(t\) and the exposure concentration \(c\).
+
+There are 7 parameters of interest involved in the equations:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  max body length (Lm, milimetres)
+\item
+  scaled body length at puberty (lp, dimensionless)
+\item
+  von Bertalanffy growth rate (gamma, d\^{}-1)
+\item
+  max reproduction rate (Rm, d\^{}-1)
+\item
+  the No effect concentration (NEC, mass L\^{}-1)
+\item
+  tolerance concentration (c* = H, R, A, G, or M according to the effect
+  model)
+\item
+  elimination rate (ke d-1)
+\end{enumerate}
+
+Lm, gamma, lp, and Rm are common to all organisms in an experiment and
+do not depend on concentration Lm, and Rm are not always reached by the
+organisms affected by a contaminant
+
+End points body length and cumulative reproduction data supposedly
+follow normal distributions for body length with a mean equal to the
+theoretical body length and a standard deviation (sigma g) and the cum.
+reprod with a mean equal to the cumulative number of offspring per
+mother and a standard deviation sigma r Sigma g represents the invidual
+variability of body length data with variability between beakers ignored
+and sigma r represents the variability of reproduction between beakers.
+Scaled length (lh,i) and reproduction rate, Rh,i, which are usually end
+points in DEBtox models are latent variables in the Bayesian framework
+and depend directly on parameters
+
+\hypertarget{control-equations}{%
+\subsubsection{Control Equations}\label{control-equations}}
+
+For the control organisms: \[\frac{dl}{dt} = r(f-1)\]
+
+\[ R = \frac{R_M}{l-l^3_{p}} * (fl^2 \frac{g+l}{g+f} - l^3_{p})\] The
+stress induced by the toxicant is modeled as a stress function
+\(s(c_q(t,c))\) where \(c_q\) is the internal concentration scaled by a
+bioconcentration factor, so that \(c_q\) is homogeneous to an exposure
+concentration. \(s(c_q(t,c))\) is positive when the scaled concentration
+exceeds an exposure concentration called the No Effect Concentration
+(NEC), and null otherwise. \[s(c_q) = c^{-1}_*(c_q - NEC)_+\] with
+\((c_q-NEC)_+ = max(0, c_q-NEC)\). \(c_*\) is the tolerance
+concentration. \(* = A, G, M, R, or H\) depending on the effect model
+considered. The scaled concentration inside the organism (\(c_q\))
+follows: \[\frac{dc_q}{dt} = k_e(c-c_q) \] where \(k_e\) is the
+elimination rate and \(c\) is the exposure concentration.
+
+\hypertarget{real-time-methods-notes}{%
+\section{Real-time Methods Notes}\label{real-time-methods-notes}}
+
+So first thing is to estimate the survival functiion for reproduction,
+alongside the \(\frac{dl}{dt}\) and R equations. However, we need
+estimates for the NEC values for both the reproduction one as well as
+the survival one. So, to do this, we'll do a separate little Bayesian
+estimation. Following the line of Fox (2010 - Ecotox \& Env. Safety)
+
+This will be done for each generation individually. For survival, the
+probability is taken to be binomial. So we consider the proportion of
+individuals surviving at concentration \(x_i\) to be
+\(P_i = \frac{Y_i}{n_i}\) where \(Y\) is the number of individuals alive
+and \(n\) is the number of initial individuals. The expectation, \(E\),
+of \(P_i\) is \(\theta_i\) the \emph{true} proportion, and thus,
+\[E[P_i] = \theta_i = \alpha*exp^{-\beta(x_i - \gamma)I(x_i - \gamma)}\]
+where \(\alpha\) is a `basal' response (response at zero/low-dose
+concentrations), \(\beta\) is the rate of decay in the response, and
+\(\gamma\) is the threshold. The data \({x_i, y_i}\) where \(x\) is the
+concentration, and \(y\) is the observed response. Note that \(I(z)\) is
+simply 1 if \(z > 0\) and 0 otherwise.
+
+For the stan model, the model is written with a binomial response
+variable, and \(\alpha\), \(\beta\), and \(\gamma\) are all modeed with
+gamma distributions, \(G(0.0001, 0.0001)\).
+
+\textbf{NOTE:} So note that fitting this was almost impossible -- the
+gradient of the data is probably just too small.
+
+\hypertarget{organism-level-modelling}{%
+\subsection{Organism-level modelling}\label{organism-level-modelling}}
+
+Growth and reproduction models need to be fit simultaneously because
+they're independent. The three equations are (for the growth model,
+using this model in assumption from Eltemsah \& Bohn 2018 - Env. Poll.):
+
+\[s_A(c) = max(0, k_A(c - NEC_A))\]
+\[\frac{dl}{dt}(t,c) = r\frac{f+g}{f + g(l(t,c)+s_A(c))}(f-l(t,c))\]
+\[R(t, c) = \frac{R_M}{1-l(t,c)^3_p} \left( fl(t,c)^2\frac{g(1+s_A(c)) + l(t,c)}{g(1+s_A(c)) + f}-l(t,c)^3_p\right)\]
+where \(R(t,c) = 0\) otherwise with \(R(0,c) = 0\).
+
+\end{document}

@@ -10,6 +10,8 @@
 ##########
 ##########
 
+# set-up =======================================================================
+
 library(here)
 library(tidyverse)
 library(rstan)
@@ -18,7 +20,6 @@ library(bayesplot)
 library(brms)
 library(beepr)
 
-#read in data
 dir = 'C:/Users/brookson/Documents/Github/Schur-etal-Data' #private data repo
 
 offspring = 
@@ -28,7 +29,7 @@ offspring =
 offspring = offspring %>% 
   select(-`X1`)
 
-### create data groupings
+# Create data groupings ========================================================
 str(offspring)
 offspring$generation = as.factor(offspring$generation)
 levels(offspring$generation)[levels(offspring$generation)== 'F3'] = 3
@@ -40,8 +41,7 @@ for(i in unique(offspring$generation)) {
   rm(temp)
 } 
 
-### pull the data and get into proper format
-#note the response is the proportion of surviving/original
+# Put data in proper format ====================================================
 nec_fit_data_f0 = generation_f0 %>% 
   filter(treatment %in% c('HFC', 'PS_400', 'PS_2000', 'PS_10000'),
          day == 21) 
