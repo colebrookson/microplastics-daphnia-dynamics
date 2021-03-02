@@ -30,9 +30,10 @@ offspring = offspring %>%
   select(-`X1`)
 
 # Create data groupings ========================================================
-str(offspring)
+
 offspring$generation = as.factor(offspring$generation)
 levels(offspring$generation)[levels(offspring$generation)== 'F3'] = 3
+
 
 for(i in unique(offspring$generation)) {
   
@@ -42,6 +43,7 @@ for(i in unique(offspring$generation)) {
 } 
 
 # Put data in proper format ====================================================
+
 nec_fit_data_f0 = generation_f0 %>% 
   filter(treatment %in% c('HFC', 'PS_400', 'PS_2000', 'PS_10000'),
          day == 21) 

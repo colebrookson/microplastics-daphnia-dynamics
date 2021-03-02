@@ -132,6 +132,33 @@ $$R(t, c) = \frac{R_M}{1-l(t,c)^3_p} \left( fl(t,c)^2\frac{g(1+s_A(c)) + l(t,c)}
 where $R(t,c) = 0$ otherwise with $R(0,c) = 0$. 
 
 
+# Analysis Plan
+
+## Fit DEBtox Models
+
+First model fit is the survival function, the length equation, and the reproduction equation. Breaking this down, what are the data that are needed for this? 
+* concentration
+* $R_M$ 
+* length data
+*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Matrix Population Models
+
+## Simulations
 
 
 
