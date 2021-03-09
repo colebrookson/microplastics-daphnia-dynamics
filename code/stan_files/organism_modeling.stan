@@ -41,8 +41,8 @@ functions {
 data {
   int<lower=0> N;
   real ts[N]; // time points
-  vector[N] y; // this is the length data
-  vector[N] x; // this is the concentration data
+  real y_init[2];              
+  real<lower = 0> y[N, 2];
 }
 
 // The parameters accepted by the model. Our model
