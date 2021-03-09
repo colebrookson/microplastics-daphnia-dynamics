@@ -16,24 +16,33 @@ functions {
                real[] theta, 
                real[] x_r,  
                int[] x_i) {
-    real P = z[1];
-    real H = z[2];
+    real l = z[1];
+    real c = z[2];
 
-    real r = theta[1];  
-    real O = theta[2];
-    real b = theta[3];
-    real c = theta[4];
-    real u = theta[5];
+    real cstar = theta[1];  
+    real cq = theta[2];
+    real NEC = theta[3];
+    real ke = theta[4];
 
-    real dP_dt = P*r - H*(O*P/(1 + O*0.075*P));
-    real dH_dt = b + H*(c*(O*P/(1 + O*0.075*P))-u);
-    return { dP_dt, dH_dt };
+
+    real LFC_ll = 1*((1+1)/(1+1*(1+(cstar*(cq-NEC)))))*(1-l);
+    real LFC_cq = ke*(c-cq);
+    real PS400_ll = 1*((1+1)/(1+1*(1+(cstar*(cq-NEC)))))*(1-l);
+    real PS400_cq = ke*(c-cq);
+    real PS2000_ll = 1*((1+1)/(1+1*(1+(cstar*(cq-NEC)))))*(1-l);
+    real PS2000_cq = ke*(c-cq);
+    real PS10000_ll = 1*((1+1)/(1+1*(1+(cstar*(cq-NEC)))))*(1-l);
+    real PS10000_cq = ke*(c-cq);
+    return {LFC_ll, LFC_cq, PS400_ll, PS400_cq,
+            PS2000_ll, PS2000_cq, PS10000_ll, PS10000_cq};
   }
 }
 // The input data is a vector 'y' of length 'N'.
 data {
   int<lower=0> N;
-  vector[N] y;
+  real ts[N]; // time points
+  vector[N] y; // this is the length data
+  vector[N] x; // this is the concentration data
 }
 
 // The parameters accepted by the model. Our model
