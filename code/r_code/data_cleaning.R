@@ -20,12 +20,12 @@ library(bayesplot)
 library(brms)
 library(beepr)
 
-dir = 'C:/Users/brookson/Documents/Github/Schur-etal-Data' #private data repo
+dir = 'C:/Users/brookson/Documents/Github/Schur-etal-Data/' #private data repo
 
 offspring = 
-  read_csv(
-    'C:/Users/brookson/Documents/Github/Schur-etal-Data/offspring_data.csv',
+  read_csv(paste0(dir, '/offspring_data.csv'),
     guess_max = 20000)
+growth_data = read_csv(paste0(dir, 'Schür_et_al._(2021)_raw_growth_data-growth_experiments.csv'))
 offspring = offspring %>% 
   select(-`X1`)
 

@@ -74,7 +74,7 @@ model {
 
   theta[{1}] ~ uniform(0, 5000); // cstar
   theta[{2}] ~ normal(0.5,0.5); // cq
-  theta[{3}] ~ uniform(0, 20); // NEC
+  theta[{3}] ~ uniform(0, 200); // NEC
   theta[{4}] ~ uniform(0.5, 5); // ke
   sigma ~ lognormal(-1, 1);
   z_init ~ lognormal(log(140), 1);
@@ -83,14 +83,19 @@ model {
     y[ , k] ~ normal(z[, k], sigma[k]);
   }
 }
-//generated quantities {
-//  real y_init_rep[2];
-//  real y_rep[N, 2];
-//  for (k in 1:2) {
-//    y_init_rep[k] = lognormal_rng(log(z_init[k]), sigma[k]);
-//    for (n in 1:N)
-//      y_rep[n, k] = lognormal_rng(log(z[n, k]), sigma[k]);
-//  }
-//}
+// Uncertainty due to parameter estimation is rolled into the values of z_init
+// z, and sigma. The uncertainty due to unexplained variation and measurement 
+// error is captured through the use of the normal pseudorandom number generator
+// *normal_rng*. The additional noise in the measurements y over that of the 
+// underlying population predictions is visualized in plots
+generated quantities {
+  real y_init_rep[2];
+  real y_rep[N, 2];
+  for (k in 1:2) {
+    y_init_rep[k] = normal_rng(z_init[k], sigma[k]);
+    for (n in 1:N)
+      y_rep[n, k] = normal_rng(z[n, k], sigma[k]);
+  }
+}
 
 
