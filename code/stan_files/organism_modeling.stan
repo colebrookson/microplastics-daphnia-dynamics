@@ -72,9 +72,9 @@ transformed parameters {
 // and standard deviation 'sigma'.
 model {
 
-  theta[{1}] ~ uniform(0, 5000); // cstar
+  theta[{1}] ~ uniform(0, 8000); // cstar
   theta[{2}] ~ normal(0.5,0.5); // cq
-  theta[{3}] ~ uniform(0, 200); // NEC
+  theta[{3}] ~ uniform(0, 500); // NEC
   theta[{4}] ~ uniform(0.5, 5); // ke
   sigma ~ lognormal(-1, 1);
   z_init ~ lognormal(log(140), 1);

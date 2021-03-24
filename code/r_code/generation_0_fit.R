@@ -86,6 +86,7 @@ gen_0_fit = stan(file = here('./code/stan_files/organism_modeling.stan'),
                verbose = TRUE,
                #open_progress = TRUE,
                control = list(adapt_delta = 0.9999)); beep(3)
+saveRDS(gen_0_fit, here('/output/intermediate-objects/gen_0_initial_fit.RDS'))
 ### diagnose model fit
 gen_0_fit_summ = print(gen_0_fit, 
                      pars=c("theta", "sigma", "z_init"),
