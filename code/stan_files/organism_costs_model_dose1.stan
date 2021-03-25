@@ -61,7 +61,7 @@ functions { // dz_dt holds all state variables (in our case 6)
 // The input data is a vector 'y' of length 'N'.
 data {
   // length data
-  real ll_init[1]; // initial length value 
+  real ll_init[1]; // initial scaled length value 
   int<lower = 0> N_obs;
   int<lower = 0> N_mis;
   // the following two arrays contain the indexes of the final array l_y which
@@ -130,7 +130,7 @@ model {
 
   theta_cq[{1}] ~ uniform(0.5, 5); // ke
   theta_ll[{1}] ~ normal(0.11, 0.009); //gamma
-  Lp ~ normal(0.49, 0.049); // length at puberty
+  Lp ~ normal(0.49, 0.049); // scaled length at puberty
   Rm ~ normal(10.74, 13.1044); // max reproduction
   cstar ~ uniform(0,10000);
   nec ~ uniform(0,6000);

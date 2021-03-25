@@ -18,7 +18,7 @@
 // define the functions first 
 functions { // dz_dt holds all state variables (in our case 6)
   real[] dll_dt(real t, 
-               real[] z, // specifying the output   
+               real[] z_ll, // specifying the output   
                real[] theta_ll, 
                real[] x_r,  
                int[] x_i) {
@@ -41,21 +41,21 @@ functions { // dz_dt holds all state variables (in our case 6)
 // The input data is a vector 'y' of length 'N'.
 data {
   // length data
-  real ll_init[1]; // initial length value 
   int<lower = 0> N_obs;
   int<lower = 0> N_mis;
   // the following two arrays contain the indexes of the final array l_y which
   // is the observed data (coded as a data vector l_y_obs) and the missing data
   // (coded as a parameter vector )
+  int<lower = 0> rep_r; // number of replicates in the reproduction trials
+  int<lower = 0> rep_l; // number of reps in length data
+  real ll_init[rep_l]; // initial length value 
   int<lower = 1, upper = N_obs + N_mis> ii_obs[N_obs]; 
   int<lower = 1, upper = N_obs + N_mis> ii_mis[N_mis];
-  real l_y_obs[N_obs, 10];
+  real l_y_obs[N_obs, rep_l];
   
   // reproduction data
-  real ts[21]; // time points
-  int<lower = 0> rep_r; // number of replicates in the reproduction trials
-  int<lower = 0> rep_l; // number of reps in length data 
-  real r_y[21, 10]; // cumulative reproduction  
+  real ts[22]; // time points
+  real r_y[22, rep_r]; // cumulative reproduction  
   
   ///////// BEGIN NOTE /////////////////////////////////////////////////////////
   // In a complex system you have to understand both the parameter values 
@@ -68,8 +68,9 @@ data {
 transformed data {
   
   int<lower = 0> N = N_obs + N_mis;
-  real x_r[0];
+  real x_r[1];
   int x_i[0];
+  x_r[1] = rep_l;
   
 }
 
@@ -77,7 +78,6 @@ transformed data {
 // accepts two parameters 'mu' and 'sigma'.
 parameters {
   real<lower = 0> theta_ll[2]; // gamma & l
-  real<lower = 0> z_init_ll[1];
   real l_y_mis[N_mis, 10];
   real<lower = 0> Lp;
   real<lower = 0> Rm;
@@ -98,10 +98,10 @@ transformed parameters {
 // and standard deviation 'sigma'.
 model {
   // definitions of values
-  real z_ll[N, 1];
-  real R0[N, rep_r];
-  real eq0[N, rep_r];
-  real L0[N, 10];
+  real z_ll[22, rep_l];
+  real R0[22, rep_r];
+  real eq0[22, rep_r];
+  real L0[22, 10];
 
   // priors
   theta_ll[{1}] ~ normal(0.11, 0.009); //gamma
@@ -115,12 +115,9 @@ model {
   //theta[{3}] ~ uniform(0, 500); // NEC
   //theta[{4}] ~ uniform(0.5, 5); // ke
   //sigma ~ lognormal(-1, 1);
-  //z_init ~ lognormal(log(140), 1);
-
-  z_ll
-    = integrate_ode_rk45(dll_dt, z_init_ll, 0, ts, theta_ll, x_r, x_i);
+  //z_init ~ lognormal(log(140), 1)
   
-
+   z_ll = integrate_ode_rk45(dll_dt, ll_init, 0, ts, theta_ll, x_r, x_i);
   
   // do the reproduction estimation 
   
@@ -128,7 +125,7 @@ model {
     
     R0[1,x] = 0; // initialization of cumulated reproduction for the control
     
-    for(y in 2:N){ // every day from 2 to 21
+    for(y in 2:22){ // every day from 2 to 21
       
       real z_temp = z_ll[y,1];
       // equation that is either 0 or 1, 1 if the scaled length is > Lp
@@ -145,9 +142,9 @@ model {
   
   // do the length estimation now
   
-  for(i in 1:N){ // days
+  for(i in 1:22){ // days
     
-    for(j in 1:10){ // number of replicates
+    for(j in 1:rep_l){ // number of replicates
       
       real z_ll_temp = z_ll[i,1];
       // get the theoretical length
@@ -166,15 +163,15 @@ model {
 // underlying population predictions is visualized in plots
 generated quantities {
   
-  real z_ll_rep[N, 1];
-  real R0_rep[N, rep_r];
-  real eq0_rep[N, rep_r];
-  real L0_rep[N, 10];
-  real r_y_rep[N, rep_r];
-  real l_y_rep[N, 10];
+  real z_ll_rep[22, rep_l];
+  real R0_rep[22, rep_r];
+  real eq0_rep[22, rep_r];
+  real L0_rep[22, 10];
+  real r_y_rep[22, rep_r];
+  real l_y_rep[22, 10];
   
    z_ll_rep
-    = integrate_ode_rk45(dll_dt, z_init_ll, 0, ts, theta_ll, x_r, x_i);
+    = integrate_ode_rk45(dll_dt, ll_init, 0, ts, theta_ll, x_r, x_i);
   
   // do the reproduction estimation 
   
@@ -182,7 +179,7 @@ generated quantities {
     
     R0_rep[1,x] = 0; // initialization of cumulated reproduction for the control
     
-    for(y in 2:N){ // every day from 2 to 21
+    for(y in 2:22){ // every day from 2 to 21
       
       real z_temp_rep = z_ll_rep[y,1];
       // equation that is either 0 or 1, 1 if the scaled length is > Lp
@@ -199,7 +196,7 @@ generated quantities {
   
   // do the length estimation now
   
-  for(i in 1:N){
+  for(i in 1:22){
     
     for(j in 1:10){
       

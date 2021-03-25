@@ -21,26 +21,27 @@ library(brms)
 library(beepr)
 library(parallel)
 library(R2WinBUGS)
+library(deSolve)
 detectCores()
 
 
 dir = 'C:/Users/brookson/Documents/Github/Schur-etal-Data/' #private data repo
 
 growth_data = read_csv(paste0(dir, 'growth_data_gen0.csv'))
-reproduction_data = read_csv(paste0(dir, 'offspring_data.csv'))
+reproduction_data = read_csv(paste0(dir, 'offspring_data.csv'), 
+                             guess_max = 15000)
 
 # keep only the LFC and generation 0
 reproduction_data = reproduction_data %>% 
-  select(-`X1`) %>% 
-  filter(treatment == 'LFC') %>% 
-  filter(generation == 0)
-reproduction_data$offspring = 
-  as.numeric(reproduction_data$offspring)
+  dplyr::select(-`X1`) %>% 
+  filter(treatment == 'LFC') 
 
 # make the length into mm
 growth_data = growth_data %>% 
   select(-`x1`) %>% 
   filter(treatment == 'LFC') %>% #keep only control treatment
+  filter(test == 1) %>% 
+  filter(day < 23) %>%
   mutate(length_mm = length*0.001)  
 
 # keep only the first replicate for each and only 21 for reproduction
@@ -48,10 +49,10 @@ reproduction_data_meanreps = reproduction_data %>%
   group_by(day) %>% 
   summarize(mean_offspring = mean(offspring, na.rm = TRUE))
   
-growth_data = growth_data %>% 
-  filter(day < 22) %>% 
-  group_by(day) %>% 
-  summarize(mean_length = mean(length_mm, na.rm = TRUE))
+# growth_data = growth_data %>% 
+#   filter(day < 23) %>% 
+#   group_by(day) %>% 
+#   summarize(mean_length = mean(length_mm, na.rm = TRUE))
 
 growth_repro_data = left_join(reproduction_data_meanreps, 
                               growth_data, 
@@ -63,104 +64,141 @@ growth_repro_data[is.na(growth_repro_data['mean_offspring']),
 growth_data$conc = 0
 # prep data ====================================================================
 
-N = length(growth_data$day)
-ts = 1:N
-y_init = c(growth_data$conc[1], 
-           growth_data$mean_length[1])
-y = as.matrix(cbind(growth_data$conc,
-                    growth_data$mean_length))
-y = cbind(y[ , 1], y[ , 2]); 
-gen0_fit_example = list(N = N, 
-                        ts = ts,
-                        y_init = y_init,
-                        y = y)
+# create data matrix
+l_y_obs_data = as.matrix(growth_data %>% 
+  filter(day < 22) %>% 
+  select(day, length_mm, replicate) %>% 
+  pivot_wider(id_cols = c(replicate, day, length_mm),
+              names_from = replicate,
+              values_from = length_mm) %>% 
+  select_if(~ !any(is.na(.))) %>% 
+  select(-day))
+
+# identify replicates that didn't survive
+reps_to_remove = reproduction_data %>% 
+  select(day, replicate, offspring) %>% 
+  group_by(day, replicate) %>% 
+  filter(offspring == 'X')
+# remove reps that didn't surviv
+reproduction_data_x_removed = reproduction_data %>% 
+  filter(!replicate %in% reps_to_remove$replicate)
+# make numeric
+reproduction_data_x_removed$offspring = 
+  as.numeric(reproduction_data_x_removed$offspring)
+# turn NA's into zeros
+reproduction_data_x_removed$offspring[which(
+  is.na(reproduction_data_x_removed$offspring))] = 0
+# create data matrix
+r_y_data = as.matrix(reproduction_data_x_removed %>% 
+  filter(day < 22) %>%  
+  pivot_wider(id_cols = c(replicate, day, offspring),
+              names_from = replicate,
+              values_from = offspring, 
+              values_fn = max))
+r_y_data = r_y_data[,2:ncol(r_y_data)]
+
+#declare all variables
+x_obs = 22
+N_obs = 10
+N_mis = 12
+rep_r = ncol(r_y_data)
+rep_l = ncol(l_y_obs_data)
+ii_obs = c(1, 3, 6, 8, 10, 13, 15, 17, 20, 22)
+ii_mis = c(2, 4, 5, 7, 9, 11, 12, 14, 16, 18, 19, 21) 
+ll_init = rep(0.2, rep_l)
+l_y_obs = l_y_obs_data
+ts = 1:nrow(r_y_data)
+r_y = r_y_data
+
+gen_0_control_data = list(
+                          N_obs = N_obs, 
+                          N_mis = N_mis,
+                          rep_r = rep_r,
+                          rep_l = rep_l,
+                          ll_init = ll_init,
+                          ii_obs = ii_obs,
+                          ii_mis = ii_mis, 
+                          l_y_obs = l_y_obs,
+                          ts = ts,
+                          r_y = r_y)
+
+N_obs = 10
+N_mis = 12
+ii_obs = c(1, 3, 6, 8, 10, 13, 15, 17, 20, 22)
+ii_mis = c(2, 4, 5, 7, 9, 11, 12, 14, 16, 18, 19, 21) 
+ll_init = 0.2
+l_y_obs = l_y_obs_data[,1]
+ts = 1:nrow(r_y_data)
+r_y = r_y_data[,1]
+
+gen_0_control_onerep_data = list(
+  N_obs = N_obs, 
+  N_mis = N_mis,
+  ll_init = array(ll_init),
+  ii_obs = ii_obs,
+  ii_mis = ii_mis, 
+  l_y_obs = l_y_obs,
+  ts = ts,
+  r_y = r_y)
 
 # fit model ====================================================================
-gen_0_fit = stan(file = here('./code/stan_files/organism_modeling.stan'),
-               data = gen0_fit_example,
-               chains = 8,
+gen_0_control_fit = stan(file = 
+                           here('./code/stan_files/organism_costs_model_control.stan'),
+               data = gen_0_control_data,
+               chains = 1,
                cores = 8,
                warmup = 5000,
-               iter = 20000,
+               iter = 10000,
                seed = 12,
                verbose = TRUE,
                #open_progress = TRUE,
                control = list(adapt_delta = 0.9999)); beep(3)
-saveRDS(gen_0_fit, here('/output/intermediate-objects/gen_0_initial_fit.RDS'))
+gen_0_control_onerep_fit = stan(file = 
+                         here('./code/stan_files/organism_costs_model_control_onerep.stan'),
+                         data = gen_0_control_onerep_data,
+                         chains = 4,
+                         cores = 8,
+                         warmup = 5000,
+                         iter = 10000,
+                         seed = 12,
+                         verbose = TRUE,
+                         #open_progress = TRUE,
+                         control = list(adapt_delta = 0.9999)); beep(3)
+saveRDS(gen_0_control_onerep_fit, here('/output/intermediate-objects/gen_0_fit_onerep.RDS'))
 ### diagnose model fit
-gen_0_fit_summ = print(gen_0_fit, 
-                     pars=c("theta", "sigma", "z_init"),
+gen_0_fit_summ = print(gen_0_control_onerep_fit, 
+                     pars=c("theta_ll", "Lp", "Rm", "Lm", "tau_l", "tau_r"),
                      probs=c(0.1, 0.5, 0.9), digits = 3)
 
-parms <- c("theta[1]","theta[2]","theta[3]","theta[4]")
-gen_0_fit_output1 <- rstan::extract(gen_0_fit,permuted=TRUE,include=TRUE)
+parms <- c("theta_ll[1]", "Lp", "Rm", "Lm", "tau_l", "tau_r")
+gen_0_fit_output1 <- rstan::extract(gen_0_control_onerep_fit,permuted=TRUE,include=TRUE)
 
 # Parms
-nec_fit_Trace <- stan_trace(gen_0_fit,parms)
-nec_fit_Dens <- mcmc_dens(gen_0_fit,parms)
-nec_fit_Overlay <- mcmc_dens_overlay(gen_0_fit,parms)
-nec_fit_Violin <- mcmc_violin(gen_0_fit,parms,probs = c(0.1, 0.5, 0.9))
-nec_fit_Pairs <- mcmc_pairs(gen_0_fit,parms)
-nec_fit_Trace
-nec_fit_Dens
-nec_fit_Overlay
-nec_fit_Violin
-nec_fit_Pairs
+gen_0_control_onerep_fit_Trace <- stan_trace(gen_0_control_onerep_fit,parms)
+gen_0_control_onerep_fit_Dens <- mcmc_dens(gen_0_control_onerep_fit,parms)
+gen_0_control_onerep_fit_Overlay <- mcmc_dens_overlay(gen_0_control_onerep_fit,parms)
+gen_0_control_onerep_fit_Violin <- mcmc_violin(gen_0_control_onerep_fit,parms,probs = c(0.1, 0.5, 0.9))
+gen_0_control_onerep_fit_Pairs <- mcmc_pairs(gen_0_control_onerep_fit,parms)
+gen_0_control_onerep_fit_Trace
+gen_0_control_onerep_fit_Dens
+gen_0_control_onerep_fit_Overlay
+gen_0_control_onerep_fit_Violin
+gen_0_control_onerep_fit_Pairs
 
-# try model in WinBUGS =========================================================
-sink("gen_0_control_bugs.txt")
-cat("
-#...
-
-model {
-# system of differential equations specified via BUGS language : CQ corresponds to the
-# scaled internal concentration, and LL to the scaled length. CQ0 and LL0 correspond to the
-# control. CQ1 and LL1 correspond to the first exposure concentration, etc… cext is a vector
-#containing the successive exposure concentrations.
-
-solution[1:n.grid, 1:dim] <- ode(init[1:dim], grid[1:n.grid], D(C[1:dim], t), origin, tol)
-
-D(C[CQ0], t) <- (cext[1] - C[CQ0] ) * ke
-D(C[LL0], t) <- gam * (f - C[LL0] * (1+ pow(cm,-1) * max(0,(C[CQ0] - nec) ) ) )
-
-# Initial conditions for the differential equations: Lb corresponds to the scaled length at birth
-
-init[CQ0] <- 0; init[LL0] <- Lb
-
-# Reproduction model: R0 corresponds to the theoretical cumulated number of offspring
-# for controls, R1 for the first exposure concentration, etc..., N corresponds to the number of
-# replicates, and h corresponds to the different times
-
-  for(N in 1:1) {
-  
-  R0[1,N] <- 0
-  
-    for(h in 2:21){ # every day from 2 to 21
-# eq = 0 if the scaled length LL is < lp, the scaled length at puberty, and eq = 1 if the
-# scaled length LL is >= lp
-
-    eq0[h,N] <- max(0,(solution[h,LL0]-Lp)/sqrt(pow(solution[h,LL0]-Lp,2)))
-
-  R0[h,N] <- R0[h-1,N]+eq0[h,N]*(1+ pow(cm,-1) * max(0,(solution[h,CQ0] - nec) ))*Rm/(1-
-pow(Lp,3))*((g+solution[h,LL0])/(g+f)*f*pow(solution[h,LL0],2)-pow(Lp,3))
-
-  R0[h,N] <- R0[h-1,N]+eq0[h,N]*(1+ pow(cm,-1) * max(0,(solution[h,CQ0] - nec) ))*Rm/(1-
-pow(Lp,3))*((g*pow(1+ pow(cm,-1) * max(0,(solution[h,CQ0] - nec) ),-
-1)+solution[h,LL0])/(g+f)*f*pow(solution[h,LL0],2)-pow(Lp,3
-    }
-  }
+png(here('./output/model-fit-figs/gen_0_control_onerep_fit_Trace.png'))
+gen_0_control_onerep_fit_Trace
+dev.off()
+ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Dens.png'),
+       gen_0_control_onerep_fit_Dens, dpi = 200,
+       width = 6, height = 6)
+ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Overlay.png'),
+       gen_0_control_onerep_fit_Overlay, dpi = 200, 
+       width = 9, height = 6)
+ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Violin.png'),
+       gen_0_control_onerep_fit_Violin, dpi = 200, 
+       width = 9, height = 6)
+ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Pairs.png'),
+       gen_0_control_onerep_fit_Pairs, dpi = 200, 
+       width = 6, height = 6)
 
 
-
-
-
-
-
-
-
-
-
-
-
-    ", fill = TRUE)
-sink()
