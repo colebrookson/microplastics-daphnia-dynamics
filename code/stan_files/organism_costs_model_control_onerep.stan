@@ -1,3 +1,13 @@
+//////////////////// 
+////////////////////
+// This code contains the stan code for the individual component as a
+// part of the larger analysis of the effect of microplastics on daphnia
+////////////////////
+////////////////////
+// AUTHOR: Cole B. Brookson
+// DATE OF CREATION: 2021-03-18
+////////////////////
+////////////////////
 functions { // dz_dt holds all state variables (in our case 6)
   real[] dll_dt(real t, 
                real[] z_ll, // specifying the output   
