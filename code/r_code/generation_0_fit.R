@@ -45,15 +45,6 @@ growth_data = growth_data %>%
   mutate(length_mm = length*0.001)  
 
 # keep only the first replicate for each and only 21 for reproduction
-reproduction_data_meanreps = reproduction_data %>% 
-  group_by(day) %>% 
-  summarize(mean_offspring = mean(offspring, na.rm = TRUE))
-  
-# growth_data = growth_data %>% 
-#   filter(day < 23) %>% 
-#   group_by(day) %>% 
-#   summarize(mean_length = mean(length_mm, na.rm = TRUE))
-
 growth_repro_data = left_join(reproduction_data_meanreps, 
                               growth_data, 
                               by = 'day')
@@ -127,9 +118,9 @@ N_mis = 12
 ii_obs = c(1, 3, 6, 8, 10, 13, 15, 17, 20, 22)
 ii_mis = c(2, 4, 5, 7, 9, 11, 12, 14, 16, 18, 19, 21) 
 ll_init = 0.2
-l_y_obs = l_y_obs_data[,1]
+l_y_obs = l_y_obs_data[,1]#this is taking first replicate (column)
 ts = 1:nrow(r_y_data)
-r_y = r_y_data[,1]
+r_y = r_y_data[,1] #this is taking first replciate (column )
 
 gen_0_control_onerep_data = list(
   N_obs = N_obs, 
@@ -142,17 +133,6 @@ gen_0_control_onerep_data = list(
   r_y = r_y)
 
 # fit model ====================================================================
-gen_0_control_fit = stan(file = 
-                           here('./code/stan_files/organism_costs_model_control.stan'),
-               data = gen_0_control_data,
-               chains = 1,
-               cores = 8,
-               warmup = 5000,
-               iter = 10000,
-               seed = 12,
-               verbose = TRUE,
-               #open_progress = TRUE,
-               control = list(adapt_delta = 0.9999)); beep(3)
 gen_0_control_onerep_fit = stan(file = 
                          here('./code/stan_files/organism_costs_model_control_onerep.stan'),
                          data = gen_0_control_onerep_data,

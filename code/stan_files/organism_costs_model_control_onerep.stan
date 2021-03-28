@@ -11,7 +11,7 @@
 functions { // dz_dt holds all state variables (in our case 6)
   real[] dll_dt(real t, 
                real[] z_ll, // specifying the output   
-               real[] theta_ll, 
+               real[] theta_ll, // parameters for this function 
                real[] x_r,  
                int[] x_i) {
     real l = z_ll[1];
@@ -31,8 +31,8 @@ data {
   // is the observed data (coded as a data vector l_y_obs) and the missing data
   // (coded as a parameter vector )
   real ll_init[1]; // initial length value 
-  int<lower = 1, upper = N_obs + N_mis> ii_obs[N_obs]; 
-  int<lower = 1, upper = N_obs + N_mis> ii_mis[N_mis];
+  int<lower = 1, upper = N_obs + N_mis> ii_obs[N_obs]; // location of data
+  int<lower = 1, upper = N_obs + N_mis> ii_mis[N_mis]; // location of missing data
   real l_y_obs[N_obs];
   
   // reproduction data
@@ -62,13 +62,18 @@ parameters {
 transformed parameters {
   
   real z_ll[22,1] = 
-      integrate_ode_rk45(dll_dt, ll_init, 0, ts, theta_ll,
-                          rep_array(0.0, 0), rep_array(0, 0),
+      integrate_ode_rk45(dll_dt, // function (defined above)
+                         ll_init, // initial length value
+                         0, // initial time point 
+                         ts, // time series to integrate over
+                         theta_ll, // parameter vector
+                         rep_array(0.0, 0), 
+                         rep_array(0, 0),
                           1e-5, 1e-3, 5e2);
   
-  real l_y[N];
-  l_y[ii_obs] = l_y_obs;
-  l_y[ii_mis] = l_y_mis;
+  real l_y[N]; // length data 
+  l_y[ii_obs] = l_y_obs; // location in length data we have observations
+  l_y[ii_mis] = l_y_mis; // location in length data we have missing data 
 }
 model {
   // definitions of values
@@ -83,6 +88,7 @@ model {
   Lm ~ normal(4.77, 1.98);
   tau_l ~ gamma(0.001, 0.001);
   tau_r ~ gamma(0.001, 0.001);
+  // priors will be added for concentration 
   
  // theta[{2}] ~ normal(0.5,0.5); // cq
   //theta[{3}] ~ uniform(0, 500); // NEC
@@ -93,11 +99,11 @@ model {
   // do the reproduction estimation 
     
   R0[1] = 0; // initialization of cumulated reproduction for the control
-  eq0[1] = 0;
+  eq0[1] = 0; // helper value/equation
     
   for(y in 2:22){ // every day from 2 to 21
       
-    real z_temp = z_ll[y,1];
+    real z_temp = z_ll[y,1];// value from the ode solver 
       // equation that is either 0 or 1, 1 if the scaled length is > Lp
     eq0[y] = fmax(0,(z_temp-Lp)/sqrt((z_temp-Lp)^2));
       
@@ -105,7 +111,7 @@ model {
     R0[y] = R0[y-1] + eq0[y]*(Rm/(1-(Lp^3)))*((1*((z_temp)^2)) *
                 ((1+z_temp)/(1+1))-(Lp^3));
       // fit R
-    r_y[y] ~ normal(R0[y], tau_r);
+    r_y[y] ~ normal(R0[y], tau_r); // estimation step 
   }
 
   
