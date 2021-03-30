@@ -110,9 +110,9 @@ model {
 
   // priors
   theta_ll[1] ~ normal(0.11, 0.009); //gamma
-  theta_cq[1] ~ uniform(0.5, 10); //cq
-  cstar ~ uniform(0, 1000); // tolerance concentration
-  NEC ~ uniform(0, 1000); // no effect concentration 
+  theta_cq[1] ~ uniform(0,10000); //cq
+  cstar ~ uniform(0, 10000); // tolerance concentration
+  NEC ~ uniform(0, 5000); // no effect concentration 
   Lp ~ normal(0.49, 0.049); // length at puberty
   Rm ~ normal(10.74, 13.1044); // max reproduction
   Lm ~ normal(4.77, 1.98);

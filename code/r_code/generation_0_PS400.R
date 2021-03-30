@@ -92,7 +92,7 @@ N_mis = 12
 ii_obs = c(1, 3, 6, 8, 10, 13, 15, 17, 20, 22)
 ii_mis = c(2, 4, 5, 7, 9, 11, 12, 14, 16, 18, 19, 21) 
 ll_init = 0.2
-cq_init = 0
+cq_init = 400
 l_y_obs = l_y_obs_data[,1]#this is taking first replicate (column)
 ts = 1:nrow(r_y_data)
 r_y = r_y_data[,1] #this is taking first replciate (column )
@@ -110,19 +110,35 @@ gen_0_ps400_data = list(
 
 # fit model ====================================================================
 gen_0_ps400_onerep_fit = stan(file = 
-                                  here('./code/stan_files/organism_costs_model_gen0_ps400.stan'),
+                here('./code/stan_files/organism_costs_model_gen0_ps400.stan'),
                                 data = gen_0_ps400_data,
                                 chains = 4,
                                 cores = 8,
                                 warmup = 5000,
-                                iter = 10000,
+                                iter = 20000,
                                 seed = 12,
                                 verbose = TRUE,
                                 #open_progress = TRUE,
                                 control = list(adapt_delta = 0.9999)); beep(3)
-saveRDS(gen_0_control_onerep_fit, here('/output/intermediate-objects/gen_0_fit_onerep.RDS'))
+saveRDS(gen_0_ps400_onerep_fit, 
+        here('/output/intermediate-objects/gen_0_ps400_onerep_fit.RDS'))
 
+# diagnose model fit
+gen_0_ps400_summ = print(gen_0_ps400_onerep_fit, 
+                       pars=c("theta_ll[1]", "theta_cq[1]", "cstar", "NEC",
+                              "Lp", "Rm", "Lm", "tau_l", "tau_r"),
+                       probs=c(0.1, 0.5, 0.9), digits = 3)
 
+parms = c("theta_ll[1]", "theta_cq[1]", "cstar", "NEC",
+           "Lp", "Rm", "Lm", "tau_l", "tau_r")
+gen_0_fit_output1 = rstan::extract(gen_0_ps400_summ,
+                                    permuted=TRUE,include=TRUE)
+
+gen_0_control_onerep_fit_Trace = stan_trace(gen_0_ps400_onerep_fit,parms)
+gen_0_control_onerep_fit_Dens = mcmc_dens(gen_0_ps400_onerep_fit,parms)
+gen_0_control_onerep_fit_Overlay = mcmc_dens_overlay(gen_0_ps400_onerep_fit,parms)
+gen_0_control_onerep_fit_Violin = mcmc_violin(gen_0_ps400_onerep_fit,parms,probs = c(0.1, 0.5, 0.9))
+gen_0_control_onerep_fit_Pairs = mcmc_pairs(gen_0_ps400_onerep_fit,parms)
 
 
 

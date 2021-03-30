@@ -121,7 +121,7 @@ gen_0_control_onerep_fit = stan(file =
                          #open_progress = TRUE,
                          control = list(adapt_delta = 0.9999)); beep(3)
 saveRDS(gen_0_control_onerep_fit, here('/output/intermediate-objects/gen_0_fit_onerep.RDS'))
-### diagnose model fit
+# diagnose model fit
 gen_0_fit_summ = print(gen_0_control_onerep_fit, 
                      pars=c("theta_ll", "Lp", "Rm", "Lm", "tau_l", "tau_r"),
                      probs=c(0.1, 0.5, 0.9), digits = 3)
