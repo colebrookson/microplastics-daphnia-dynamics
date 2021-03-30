@@ -32,7 +32,7 @@ functions { // dz_dt holds all state variables (in our case 6)
     
     real ke = theta_cq[1];
     
-    real d_cq = ke*(-cq);
+    real d_cq = ke*(400-cq); // note - constant value changes w/ concentration
     
     return { d_cq };
   }
@@ -45,6 +45,7 @@ data {
   // is the observed data (coded as a data vector l_y_obs) and the missing data
   // (coded as a parameter vector )
   real ll_init[1]; // initial length value 
+  real cq_init[1];
   int<lower = 1, upper = N_obs + N_mis> ii_obs[N_obs]; // location of data
   int<lower = 1, upper = N_obs + N_mis> ii_mis[N_mis]; // location of missing data
   real l_y_obs[N_obs];
@@ -64,7 +65,10 @@ transformed data {
 }
 parameters {
   real<lower = 0> theta_ll[1]; // gamma & l
+  real<lower = 0> theta_cq[1]; // ke
   real l_y_mis[N_mis];
+  real<lower = 0> cstar;
+  real<lower = 0> NEC;
   real<lower = 0> Lp;
   real<lower = 0> Rm;
   real<lower = 0> Lm;
@@ -84,6 +88,15 @@ transformed parameters {
                          rep_array(0.0, 0), 
                          rep_array(0, 0),
                           1e-5, 1e-3, 5e2);
+  real z_cq[22,1] = 
+      integrate_ode_rk45(dcq_dt, // function (defined above)
+                         cq_init, // initial length value
+                         0, // initial time point 
+                         ts, // time series to integrate over
+                         theta_cq, // parameter vector
+                         rep_array(0.0, 0), 
+                         rep_array(0, 0),
+                        1e-5, 1e-3, 5e2);
   
   real l_y[N]; // length data 
   l_y[ii_obs] = l_y_obs; // location in length data we have observations
@@ -97,18 +110,14 @@ model {
 
   // priors
   theta_ll[1] ~ normal(0.11, 0.009); //gamma
+  theta_cq[1] ~ uniform(0.5, 10); //cq
+  cstar ~ uniform(0, 1000); // tolerance concentration
+  NEC ~ uniform(0, 1000); // no effect concentration 
   Lp ~ normal(0.49, 0.049); // length at puberty
   Rm ~ normal(10.74, 13.1044); // max reproduction
   Lm ~ normal(4.77, 1.98);
   tau_l ~ gamma(0.001, 0.001);
   tau_r ~ gamma(0.001, 0.001);
-  // priors will be added for concentration 
-  
- // theta[{2}] ~ normal(0.5,0.5); // cq
-  //theta[{3}] ~ uniform(0, 500); // NEC
-  //theta[{4}] ~ uniform(0.5, 5); // ke
-  //sigma ~ lognormal(-1, 1);
-  //z_init ~ lognormal(log(140), 1)
 
   // do the reproduction estimation 
     
@@ -117,13 +126,15 @@ model {
     
   for(y in 2:22){ // every day from 2 to 21
       
-    real z_temp = z_ll[y,1];// value from the ode solver 
+    real z_ll_temp = z_ll[y,1];// value from the ode solver  for length
+    real z_cq_temp = z_cq[y,1]; // value from ode solver for cq
+    real s_cq = cstar*(fmax(0, (z_cq_temp-NEC))); 
       // equation that is either 0 or 1, 1 if the scaled length is > Lp
-    eq0[y] = fmax(0,(z_temp-Lp)/sqrt((z_temp-Lp)^2));
+    eq0[y] = fmax(0,(z_ll_temp-Lp)/sqrt((z_ll_temp-Lp)^2));
       
       // cumulative reproduction at each time step
-    R0[y] = R0[y-1] + eq0[y]*(Rm/(1-(Lp^3)))*((1*((z_temp)^2)) *
-                ((1+z_temp)/(1+1))-(Lp^3));
+    R0[y] = R0[y-1] + eq0[y]*(Rm/(1-(Lp^3)))*((1*((z_ll_temp)^2)) *
+                ((1+z_ll_temp)/(1+1))-(Lp^3))*((1+s_cq)^-1);
       // fit R
     r_y[y] ~ normal(R0[y], tau_r); // estimation step 
   }
@@ -167,13 +178,15 @@ generated quantities {
     
   for(y in 2:22){ // every day from 2 to 21
       
-    real z_temp_rep = z_ll[y,1];
+    real z_ll_temp_rep = z_ll[y,1];
+    real z_cq_temp_rep = z_cq[y,1]; // value from ode solver for cq
+    real s_cq_rep = cstar*(fmax(0, (z_cq_temp_rep-NEC))); 
       // equation that is either 0 or 1, 1 if the scaled length is > Lp
-    eq0_rep[y] = fmax(0,(z_temp_rep-Lp)/sqrt((z_temp_rep-Lp)^2));
+    eq0_rep[y] = fmax(0,(z_ll_temp_rep-Lp)/sqrt((z_ll_temp_rep-Lp)^2));
       
       // cumulative reproduction at each time step
-    R0_rep[y] = R0_rep[y-1] + eq0_rep[y]*(Rm/(1-(Lp^3)))*((1*((z_temp_rep)^2)) *
-                ((1+z_temp_rep)/(1+1))-(Lp^3));
+    R0_rep[y] = R0_rep[y-1] + eq0_rep[y]*(Rm/(1-(Lp^3)))*((1*((z_ll_temp_rep)^2)) *
+                ((1+z_ll_temp_rep)/(1+1))-(Lp^3))*((1+s_cq_rep)^-1);
       // fit R
     r_y_rep[y] = normal_rng(R0_rep[y], tau_r);
   }

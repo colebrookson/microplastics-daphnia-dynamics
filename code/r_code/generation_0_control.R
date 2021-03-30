@@ -89,30 +89,6 @@ r_y_data = as.matrix(reproduction_data_x_removed %>%
 r_y_data = r_y_data[,2:ncol(r_y_data)]
 
 #declare all variables
-x_obs = 22
-N_obs = 10
-N_mis = 12
-rep_r = ncol(r_y_data)
-rep_l = ncol(l_y_obs_data)
-ii_obs = c(1, 3, 6, 8, 10, 13, 15, 17, 20, 22)
-ii_mis = c(2, 4, 5, 7, 9, 11, 12, 14, 16, 18, 19, 21) 
-ll_init = rep(0.2, rep_l)
-l_y_obs = l_y_obs_data
-ts = 1:nrow(r_y_data)
-r_y = r_y_data
-
-gen_0_control_data = list(
-                          N_obs = N_obs, 
-                          N_mis = N_mis,
-                          rep_r = rep_r,
-                          rep_l = rep_l,
-                          ll_init = ll_init,
-                          ii_obs = ii_obs,
-                          ii_mis = ii_mis, 
-                          l_y_obs = l_y_obs,
-                          ts = ts,
-                          r_y = r_y)
-
 N_obs = 10
 N_mis = 12
 ii_obs = c(1, 3, 6, 8, 10, 13, 15, 17, 20, 22)
