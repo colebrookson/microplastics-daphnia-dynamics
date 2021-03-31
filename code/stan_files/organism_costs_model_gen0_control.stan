@@ -84,7 +84,7 @@ model {
   // priors
   theta_ll[1] ~ normal(0.11, 0.009); //gamma
   Lp ~ normal(0.49, 0.049); // length at puberty
-  Rm ~ normal(10.74, 13.1044); // max reproduction
+  Rm ~ normal(10.74, 2.5); // max reproduction
   Lm ~ normal(4.77, 1.98);
   tau_l ~ gamma(0.001, 0.001);
   tau_r ~ gamma(0.001, 0.001);
@@ -105,7 +105,10 @@ model {
       
     real z_temp = z_ll[y,1];// value from the ode solver 
       // equation that is either 0 or 1, 1 if the scaled length is > Lp
-    eq0[y] = fmax(0,(z_temp-Lp)/sqrt((z_temp-Lp)^2));
+    if (z_temp <= Lp)
+      eq0[y] = 0;
+    else
+      eq0[y] = 1;
       
       // cumulative reproduction at each time step
     R0[y] = R0[y-1] + eq0[y]*(Rm/(1-(Lp^3)))*((1*((z_temp)^2)) *
@@ -155,8 +158,10 @@ generated quantities {
       
     real z_temp_rep = z_ll[y,1];
       // equation that is either 0 or 1, 1 if the scaled length is > Lp
-    eq0_rep[y] = fmax(0,(z_temp_rep-Lp)/sqrt((z_temp_rep-Lp)^2));
-      
+    if (z_temp_rep <= Lp)
+      eq0_rep[y] = 0;
+    else
+      eq0_rep[y] = 1;
       // cumulative reproduction at each time step
     R0_rep[y] = R0_rep[y-1] + eq0_rep[y]*(Rm/(1-(Lp^3)))*((1*((z_temp_rep)^2)) *
                 ((1+z_temp_rep)/(1+1))-(Lp^3));

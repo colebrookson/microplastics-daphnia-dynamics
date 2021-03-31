@@ -87,6 +87,14 @@ r_y_data = as.matrix(reproduction_data_x_removed %>%
               values_from = offspring, 
               values_fn = max))
 r_y_data = r_y_data[,2:ncol(r_y_data)]
+r_y_data_cumul = matrix(nrow = nrow(r_y_data), ncol = ncol(r_y_data))
+for(i in 1:nrow(r_y_data_cumul)) {
+  for(j in 1:ncol(r_y_data_cumul)){
+   
+    r_y_data_cumul[i,j] = sum(r_y_data[1:i,j])
+    
+  }
+}
 
 #declare all variables
 N_obs = 10
@@ -96,7 +104,7 @@ ii_mis = c(2, 4, 5, 7, 9, 11, 12, 14, 16, 18, 19, 21)
 ll_init = 0.2
 l_y_obs = l_y_obs_data[,1]#this is taking first replicate (column)
 ts = 1:nrow(r_y_data)
-r_y = r_y_data[,1] #this is taking first replciate (column )
+r_y = r_y_data_cumul[,1] #this is taking first replciate (column )
 
 gen_0_control_onerep_data = list(
   N_obs = N_obs, 
@@ -110,36 +118,96 @@ gen_0_control_onerep_data = list(
 
 # fit model ====================================================================
 gen_0_control_onerep_fit = stan(file = 
-                         here('./code/stan_files/organism_costs_model_control_onerep.stan'),
+                         here('./code/stan_files/organism_costs_model_gen0_control.stan'),
                          data = gen_0_control_onerep_data,
-                         chains = 4,
+                         chains = 2,
                          cores = 8,
-                         warmup = 5000,
-                         iter = 10000,
-                         seed = 12,
+                         warmup = 2000,
+                         iter = 5000,
+                         seed = 1,
                          verbose = TRUE,
                          #open_progress = TRUE,
-                         control = list(adapt_delta = 0.9999)); beep(3)
+                         control = list(adapt_delta = 0.99)); beep(2)
 saveRDS(gen_0_control_onerep_fit, here('/output/intermediate-objects/gen_0_fit_onerep.RDS'))
+gen_0_control_onerep_fit = 
+  readRDS(here('/output/intermediate-objects/gen_0_fit_onerep.RDS'))
 # diagnose model fit
 gen_0_fit_summ = print(gen_0_control_onerep_fit, 
                      pars=c("theta_ll", "Lp", "Rm", "Lm", "tau_l", "tau_r"),
                      probs=c(0.1, 0.5, 0.9), digits = 3)
 
-parms <- c("theta_ll[1]", "Lp", "Rm", "Lm", "tau_l", "tau_r")
-gen_0_fit_output1 <- rstan::extract(gen_0_control_onerep_fit,permuted=TRUE,include=TRUE)
+parms = c("theta_ll[1]", "Lp", "Rm", "Lm", "tau_l", "tau_r")
+gen_0_fit_output1 = rstan::extract(gen_0_control_onerep_fit,permuted=TRUE,include=TRUE)
 
 # Parms
-gen_0_control_onerep_fit_Trace <- stan_trace(gen_0_control_onerep_fit,parms)
-gen_0_control_onerep_fit_Dens <- mcmc_dens(gen_0_control_onerep_fit,parms)
-gen_0_control_onerep_fit_Overlay <- mcmc_dens_overlay(gen_0_control_onerep_fit,parms)
-gen_0_control_onerep_fit_Violin <- mcmc_violin(gen_0_control_onerep_fit,parms,probs = c(0.1, 0.5, 0.9))
-gen_0_control_onerep_fit_Pairs <- mcmc_pairs(gen_0_control_onerep_fit,parms)
+gen_0_control_onerep_fit_Trace = stan_trace(gen_0_control_onerep_fit,parms)
+gen_0_control_onerep_fit_Dens = mcmc_dens(gen_0_control_onerep_fit,parms)
+gen_0_control_onerep_fit_Overlay = mcmc_dens_overlay(gen_0_control_onerep_fit,parms)
+gen_0_control_onerep_fit_Violin = mcmc_violin(gen_0_control_onerep_fit,parms,probs = c(0.1, 0.5, 0.9))
+gen_0_control_onerep_fit_Pairs = mcmc_pairs(gen_0_control_onerep_fit,parms)
 gen_0_control_onerep_fit_Trace
 gen_0_control_onerep_fit_Dens
 gen_0_control_onerep_fit_Overlay
 gen_0_control_onerep_fit_Violin
 gen_0_control_onerep_fit_Pairs
+
+# Data; density
+y_rep <- gen_0_fit_output1$r_y_rep
+y_rep <- data.frame(y_rep)
+length(y_rep)
+y_rep = as.matrix(y_rep)
+y_rep_P <- y_rep[-c(21:40)]
+y_rep_P <- as.matrix(y_rep_P)
+y_rep_H <- y_rep[-c(1:20)]
+y_rep_H <- as.matrix(y_rep_H)
+y_df <- data.frame(r_y)
+y_df = as.vector(y_df$r_y, mode = 'numeric')
+y_P <- y_df[-c(2)]
+y_P <- as.vector(y_P$V1,mode = "numeric")
+y_H <- y_df[-c(1)]
+y_H <- as.vector(y_H$V2,mode = "numeric")
+color_scheme_set("green")
+P_plot <- ppc_dens_overlay(as.vector(y_df), y_rep[1:200,])+
+  theme_minimal()+
+  xlab("Abundance")+
+  ylab("Density")+
+  labs(title="Empirical vs. Estimated Distribution of Parasite Abundance Data",
+       subtitle="Showing 200 Draws from the Posterior")
+
+
+# Data; time series
+Z_df <- data.frame(gen_0_fit_output1$r_y_rep)
+Z_means <- Z_df %>% summarize(across(`X1`:`X22`, mean))
+Z_means = t(Z_means)
+# Parse df by P and H
+Z_means_P <- Z_means[-c(21:40)]
+ncol(Z_means_P) # 2922; good
+Z_means_H <- Z_means[-c(1:20)]  
+ncol(Z_means_H) # 2922
+# Invert dfs
+Z_means_P <- t(Z_means_P)
+Z_means_H <- t(Z_means_H)
+# Re-name columns 
+colnames(Z_means_P) <- c("post_means_P")
+colnames(Z_means_H) <- c("post_means_H")
+head(y) # Recall that y is the data we gave the model (our stochastic data)
+y_df <- data.frame(y)
+colnames(y_df) <- c("P","H")
+# Merge dfs
+Mega_df <- cbind(Z_means,data.frame(r_y), ts = seq(1,22,1))
+# Add time steps
+ts <- seq(1:20)
+ts <- data.frame(ts)
+# Final df
+Mega_df <- cbind(Mega_df,ts)
+Post_By_Data_Plot <- ggplot(Mega_df,aes(x=ts))+
+  geom_line(aes(y=Z_means,colour="springgreen4"))+ # Data P
+  geom_line(aes(y=r_y,colour="cornflowerblue"))+ # Data H
+  xlab("Time Step")+
+  ylab("Population Abundance")+
+  ggtitle("Posterior Estimates Plotted Against Data")+
+  theme_minimal()
+Post_By_Data_Plot
 
 png(here('./output/model-fit-figs/gen_0_control_onerep_fit_Trace.png'))
 gen_0_control_onerep_fit_Trace

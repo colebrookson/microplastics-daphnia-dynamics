@@ -87,12 +87,26 @@ r_y_data = as.matrix(reproduction_data_x_removed %>%
 r_y_data = r_y_data[,2:ncol(r_y_data)]
 
 #declare all variables
+funct = function(t, y, p){
+  cq <- y[1]
+  
+  d_cq = ke*(400-cq)
+  
+  return(list(d_cq))
+}
+ke = 0.5
+parms <- c(ke)
+
+N0 <- 0
+TT <- seq(1,20,1) 
+results <- lsoda(N0,TT,funct,parms)
+
 N_obs = 10
 N_mis = 12
 ii_obs = c(1, 3, 6, 8, 10, 13, 15, 17, 20, 22)
 ii_mis = c(2, 4, 5, 7, 9, 11, 12, 14, 16, 18, 19, 21) 
 ll_init = 0.2
-cq_init = 400
+cq = results[,2]
 l_y_obs = l_y_obs_data[,1]#this is taking first replicate (column)
 ts = 1:nrow(r_y_data)
 r_y = r_y_data[,1] #this is taking first replciate (column )
@@ -114,12 +128,12 @@ gen_0_ps400_onerep_fit = stan(file =
                                 data = gen_0_ps400_data,
                                 chains = 4,
                                 cores = 8,
-                                warmup = 5000,
-                                iter = 20000,
+                                warmup = 2000,
+                                iter = 5000,
                                 seed = 12,
                                 verbose = TRUE,
                                 #open_progress = TRUE,
-                                control = list(adapt_delta = 0.9999)); beep(3)
+                                control = list(adapt_delta = 0.9)); beep(3)
 saveRDS(gen_0_ps400_onerep_fit, 
         here('/output/intermediate-objects/gen_0_ps400_onerep_fit.RDS'))
 
@@ -140,7 +154,18 @@ gen_0_control_onerep_fit_Overlay = mcmc_dens_overlay(gen_0_ps400_onerep_fit,parm
 gen_0_control_onerep_fit_Violin = mcmc_violin(gen_0_ps400_onerep_fit,parms,probs = c(0.1, 0.5, 0.9))
 gen_0_control_onerep_fit_Pairs = mcmc_pairs(gen_0_ps400_onerep_fit,parms)
 
+funct = function(t, y, p){
+  cq <- y[1]
+  
+  d_cq = ke*(0-cq)
+  
+  return(list(d_cq))
+}
+ke = 0.5
+parms <- c(ke)
 
-
+N0 <- 0
+TT <- seq(1,20,1) 
+results <- lsoda(N0,TT,funct,parms)
 
 

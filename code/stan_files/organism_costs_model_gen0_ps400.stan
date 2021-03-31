@@ -23,19 +23,19 @@ functions { // dz_dt holds all state variables (in our case 6)
     return { dl_dt };
   }
     
-    real[] dcq_dt(real t, 
-               real[] z_cq, // specifying the output   
-               real[] theta_cq, 
-               real[] x_r,  
-               int[] x_i) {
-    real cq = z_cq[1];
-    
-    real ke = theta_cq[1];
-    
-    real d_cq = ke*(400-cq); // note - constant value changes w/ concentration
-    
-    return { d_cq };
-  }
+ //   real[] dcq_dt(real t, 
+ //              real[] z_cq, // specifying the output   
+ //              //real[] theta_cq, 
+ //              real[] x_r,  
+ //              int[] x_i) {
+ //   real cq = z_cq[1];
+ //   
+ //   //real 0.5 = theta_cq[1];
+ //   
+ //   real d_cq = 0.5*(400-cq); // NOTE - constant value changes w/ concentration
+ //   
+ //   return { d_cq };
+ // }
 }
 data {
   // length data
@@ -45,7 +45,7 @@ data {
   // is the observed data (coded as a data vector l_y_obs) and the missing data
   // (coded as a parameter vector )
   real ll_init[1]; // initial length value 
-  real cq_init[1];
+ // real cq_init[1];
   int<lower = 1, upper = N_obs + N_mis> ii_obs[N_obs]; // location of data
   int<lower = 1, upper = N_obs + N_mis> ii_mis[N_mis]; // location of missing data
   real l_y_obs[N_obs];
@@ -53,6 +53,7 @@ data {
   // reproduction data
   real ts[22]; // time points
   real r_y[22]; // cumulative reproduction  
+  real cq[22];
 
 }
 transformed data {
@@ -65,7 +66,7 @@ transformed data {
 }
 parameters {
   real<lower = 0> theta_ll[1]; // gamma & l
-  real<lower = 0> theta_cq[1]; // ke
+  //real<lower = 0> theta_cq[1]; // ke
   real l_y_mis[N_mis];
   real<lower = 0> cstar;
   real<lower = 0> NEC;
@@ -88,15 +89,15 @@ transformed parameters {
                          rep_array(0.0, 0), 
                          rep_array(0, 0),
                           1e-5, 1e-3, 5e2);
-  real z_cq[22,1] = 
-      integrate_ode_rk45(dcq_dt, // function (defined above)
-                         cq_init, // initial length value
-                         0, // initial time point 
-                         ts, // time series to integrate over
-                         theta_cq, // parameter vector
-                         rep_array(0.0, 0), 
-                         rep_array(0, 0),
-                        1e-5, 1e-3, 5e2);
+ // real z_cq[22,1] = 
+ //     integrate_ode_rk45(dcq_dt, // function (defined above)
+ //                        cq_init, // initial cq value
+ //                        0, // initial time point 
+ //                        ts, // time series to integrate over
+ //                        theta_cq, // parameter vector
+ //                        rep_array(0.0, 0), 
+ //                        rep_array(0, 0),
+ //                       1e-5, 1e-3, 5e2);
   
   real l_y[N]; // length data 
   l_y[ii_obs] = l_y_obs; // location in length data we have observations
@@ -110,7 +111,7 @@ model {
 
   // priors
   theta_ll[1] ~ normal(0.11, 0.009); //gamma
-  theta_cq[1] ~ uniform(0,10000); //cq
+  //theta_cq[1] ~ uniform(0.5,5); //ke
   cstar ~ uniform(0, 10000); // tolerance concentration
   NEC ~ uniform(0, 5000); // no effect concentration 
   Lp ~ normal(0.49, 0.049); // length at puberty
@@ -127,10 +128,13 @@ model {
   for(y in 2:22){ // every day from 2 to 21
       
     real z_ll_temp = z_ll[y,1];// value from the ode solver  for length
-    real z_cq_temp = z_cq[y,1]; // value from ode solver for cq
+    real z_cq_temp = cq[y]; // value from ode solver for cq
     real s_cq = cstar*(fmax(0, (z_cq_temp-NEC))); 
       // equation that is either 0 or 1, 1 if the scaled length is > Lp
-    eq0[y] = fmax(0,(z_ll_temp-Lp)/sqrt((z_ll_temp-Lp)^2));
+    if (z_ll_temp <= Lp)
+      eq0[y] = 0;
+    else
+      eq0[y] = 1;
       
       // cumulative reproduction at each time step
     R0[y] = R0[y-1] + eq0[y]*(Rm/(1-(Lp^3)))*((1*((z_ll_temp)^2)) *
@@ -179,11 +183,13 @@ generated quantities {
   for(y in 2:22){ // every day from 2 to 21
       
     real z_ll_temp_rep = z_ll[y,1];
-    real z_cq_temp_rep = z_cq[y,1]; // value from ode solver for cq
+    real z_cq_temp_rep = cq[y]; // value from ode solver for cq
     real s_cq_rep = cstar*(fmax(0, (z_cq_temp_rep-NEC))); 
       // equation that is either 0 or 1, 1 if the scaled length is > Lp
-    eq0_rep[y] = fmax(0,(z_ll_temp_rep-Lp)/sqrt((z_ll_temp_rep-Lp)^2));
-      
+    if (z_ll_temp_rep <= Lp)
+      eq0_rep[y] = 0;
+    else
+      eq0_rep[y] = 1;      
       // cumulative reproduction at each time step
     R0_rep[y] = R0_rep[y-1] + eq0_rep[y]*(Rm/(1-(Lp^3)))*((1*((z_ll_temp_rep)^2)) *
                 ((1+z_ll_temp_rep)/(1+1))-(Lp^3))*((1+s_cq_rep)^-1);
