@@ -45,11 +45,6 @@ growth_data = growth_data %>%
   mutate(length_mm = length*0.001)  
 
 # keep only the first replicate for each and only 21 for reproduction
-growth_repro_data = left_join(reproduction_data_meanreps, 
-                              growth_data, 
-                              by = 'day')
-growth_repro_data[is.na(growth_repro_data['mean_offspring']),
-                  'mean_offspring']=0
 
 # add concentration (0)
 growth_data$conc = 0
@@ -120,14 +115,15 @@ gen_0_control_onerep_data = list(
 gen_0_control_onerep_fit = stan(file = 
                          here('./code/stan_files/organism_costs_model_gen0_control.stan'),
                          data = gen_0_control_onerep_data,
-                         chains = 2,
+                         chains = 4,
                          cores = 8,
-                         warmup = 2000,
-                         iter = 5000,
-                         seed = 1,
+                         warmup = 5000,
+                         iter = 10000,
+                         seed = 4,
                          verbose = TRUE,
                          #open_progress = TRUE,
-                         control = list(adapt_delta = 0.99)); beep(2)
+                         control = list(adapt_delta = 0.999,
+                                        max_treedepth = 12)); beep(3)
 saveRDS(gen_0_control_onerep_fit, here('/output/intermediate-objects/gen_0_fit_onerep.RDS'))
 gen_0_control_onerep_fit = 
   readRDS(here('/output/intermediate-objects/gen_0_fit_onerep.RDS'))
@@ -137,13 +133,14 @@ gen_0_fit_summ = print(gen_0_control_onerep_fit,
                      probs=c(0.1, 0.5, 0.9), digits = 3)
 
 parms = c("theta_ll[1]", "Lp", "Rm", "Lm", "tau_l", "tau_r")
-gen_0_fit_output1 = rstan::extract(gen_0_control_onerep_fit,permuted=TRUE,include=TRUE)
+gen_0_control_output = rstan::extract(gen_0_control_onerep_fit,permuted=TRUE,include=TRUE)
 
 # Parms
 gen_0_control_onerep_fit_Trace = stan_trace(gen_0_control_onerep_fit,parms)
 gen_0_control_onerep_fit_Dens = mcmc_dens(gen_0_control_onerep_fit,parms)
 gen_0_control_onerep_fit_Overlay = mcmc_dens_overlay(gen_0_control_onerep_fit,parms)
-gen_0_control_onerep_fit_Violin = mcmc_violin(gen_0_control_onerep_fit,parms,probs = c(0.1, 0.5, 0.9))
+gen_0_control_onerep_fit_Violin = mcmc_violin(gen_0_control_onerep_fit,parms,
+                                              probs = c(0.1, 0.5, 0.9))
 gen_0_control_onerep_fit_Pairs = mcmc_pairs(gen_0_control_onerep_fit,parms)
 gen_0_control_onerep_fit_Trace
 gen_0_control_onerep_fit_Dens
@@ -152,77 +149,93 @@ gen_0_control_onerep_fit_Violin
 gen_0_control_onerep_fit_Pairs
 
 # Data; density
-y_rep <- gen_0_fit_output1$r_y_rep
-y_rep <- data.frame(y_rep)
-length(y_rep)
-y_rep = as.matrix(y_rep)
-y_rep_P <- y_rep[-c(21:40)]
-y_rep_P <- as.matrix(y_rep_P)
-y_rep_H <- y_rep[-c(1:20)]
-y_rep_H <- as.matrix(y_rep_H)
-y_df <- data.frame(r_y)
-y_df = as.vector(y_df$r_y, mode = 'numeric')
-y_P <- y_df[-c(2)]
-y_P <- as.vector(y_P$V1,mode = "numeric")
-y_H <- y_df[-c(1)]
-y_H <- as.vector(y_H$V2,mode = "numeric")
+y_rep_control = gen_0_control_output$r_y_rep
+y_rep_control = data.frame(y_rep_control)
+y_rep_control = as.matrix(y_rep_control)
+y_df_control = data.frame(r_y)
+y_df_control = as.vector(y_df_control$r_y, mode = 'numeric')
 color_scheme_set("green")
-P_plot <- ppc_dens_overlay(as.vector(y_df), y_rep[1:200,])+
-  theme_minimal()+
-  xlab("Abundance")+
-  ylab("Density")+
-  labs(title="Empirical vs. Estimated Distribution of Parasite Abundance Data",
+P_plot_control = ppc_dens_overlay(as.vector(y_df_control), y_rep[1:200,])+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    legend.position = 'none'
+  )+
+  labs(title="Empirical vs. Estimated Distribution \nof Cumulative Reproduction Data (Control Treatment)",
        subtitle="Showing 200 Draws from the Posterior")
-
+ggsave(here('output/model-fit-figs/control_dens_overlay.png'), P_plot_control)
 
 # Data; time series
-Z_df <- data.frame(gen_0_fit_output1$r_y_rep)
-Z_means <- Z_df %>% summarize(across(`X1`:`X22`, mean))
-Z_means = t(Z_means)
+Z_df_control = data.frame(gen_0_control_output$r_y_rep)
+Z_df_control_means = Z_df_control %>% summarize(across(`X1`:`X22`, mean))
+Z_df_control_means = t(Z_df_control_means)
 # Parse df by P and H
-Z_means_P <- Z_means[-c(21:40)]
-ncol(Z_means_P) # 2922; good
-Z_means_H <- Z_means[-c(1:20)]  
-ncol(Z_means_H) # 2922
 # Invert dfs
-Z_means_P <- t(Z_means_P)
-Z_means_H <- t(Z_means_H)
 # Re-name columns 
-colnames(Z_means_P) <- c("post_means_P")
-colnames(Z_means_H) <- c("post_means_H")
-head(y) # Recall that y is the data we gave the model (our stochastic data)
-y_df <- data.frame(y)
-colnames(y_df) <- c("P","H")
 # Merge dfs
-Mega_df <- cbind(Z_means,data.frame(r_y), ts = seq(1,22,1))
+Mega_df_control = cbind(Z_df_control_means,
+                        data.frame(r_y), ts = seq(1,22,1))
 # Add time steps
-ts <- seq(1:20)
-ts <- data.frame(ts)
 # Final df
-Mega_df <- cbind(Mega_df,ts)
-Post_By_Data_Plot <- ggplot(Mega_df,aes(x=ts))+
-  geom_line(aes(y=Z_means,colour="springgreen4"))+ # Data P
-  geom_line(aes(y=r_y,colour="cornflowerblue"))+ # Data H
+#Mega_df = cbind(Mega_df,ts)
+Post_By_Data_Plot_control = ggplot(Mega_df_control,aes(x=ts))+
+  geom_line(aes(y=Z_means), colour="black", size = 1.5)+ # Data P
+  geom_point(aes(y=r_y), shape = 21, fill="cornflowerblue", size = 3.2)+ 
   xlab("Time Step")+
-  ylab("Population Abundance")+
+  ylab("Cumulative Reproduction")+
   ggtitle("Posterior Estimates Plotted Against Data")+
-  theme_minimal()
-Post_By_Data_Plot
-
-png(here('./output/model-fit-figs/gen_0_control_onerep_fit_Trace.png'))
-gen_0_control_onerep_fit_Trace
-dev.off()
-ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Dens.png'),
-       gen_0_control_onerep_fit_Dens, dpi = 200,
-       width = 6, height = 6)
-ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Overlay.png'),
-       gen_0_control_onerep_fit_Overlay, dpi = 200, 
-       width = 9, height = 6)
-ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Violin.png'),
-       gen_0_control_onerep_fit_Violin, dpi = 200, 
-       width = 9, height = 6)
-ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Pairs.png'),
-       gen_0_control_onerep_fit_Pairs, dpi = 200, 
-       width = 6, height = 6)
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    legend.position = 'none',
+    axis.title = element_text(size = 17),
+    axis.text = element_text(size = 12),
+    plot.title = element_text(size = 20)
+  )
+ggsave(here('output/model-fit-figs/control_model_data.png'), 
+       Post_By_Data_Plot_control)
 
 
+
+
+
+
+
+# png(here('./output/model-fit-figs/gen_0_control_onerep_fit_Trace.png'))
+# gen_0_control_onerep_fit_Trace
+# dev.off()
+# ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Dens.png'),
+#        gen_0_control_onerep_fit_Dens, dpi = 200,
+#        width = 6, height = 6)
+# ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Overlay.png'),
+#        gen_0_control_onerep_fit_Overlay, dpi = 200, 
+#        width = 9, height = 6)
+# ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Violin.png'),
+#        gen_0_control_onerep_fit_Violin, dpi = 200, 
+#        width = 9, height = 6)
+# ggsave(here('./output/model-fit-figs/gen_0_control_onerep_fit_Pairs.png'),
+#        gen_0_control_onerep_fit_Pairs, dpi = 200, 
+#        width = 6, height = 6)
+# 
+# funct = function(t, y, p){
+#   l = y[1]
+#   
+#   dl_dt = gamma*(1-l)
+#   
+#   return(list(dl_dt))
+# }
+# gamma = 0.1
+# parms = c(gamma)
+# 
+# N0 = 0.2
+# TT = seq(1,20,1) 
+# results = lsoda(N0,TT,funct,parms)
+# 
+# mean=100; sd=15
+# lb=80; ub=120
+# 
+# x = seq(-4,4,length=100)*sd + mean
+# hx = dnorm(x,mean,sd)
+# 
+# plot(x, hx, type="n", xlab="IQ Values", ylab="",
+#      main="Normal Distribution", axes=FALSE)

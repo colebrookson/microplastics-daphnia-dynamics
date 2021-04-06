@@ -33,7 +33,7 @@ data {
   real ll_init[1]; // initial length value 
   int<lower = 1, upper = N_obs + N_mis> ii_obs[N_obs]; // location of data
   int<lower = 1, upper = N_obs + N_mis> ii_mis[N_mis]; // location of missing data
-  real l_y_obs[N_obs];
+  real<lower = 0> l_y_obs[N_obs];
   
   // reproduction data
   real ts[22]; // time points
@@ -50,12 +50,12 @@ transformed data {
 }
 parameters {
   real<lower = 0> theta_ll[1]; // gamma & l
-  real l_y_mis[N_mis];
+  real <lower = 0>l_y_mis[N_mis];
   real<lower = 0> Lp;
   real<lower = 0> Rm;
   real<lower = 0> Lm;
-  real tau_l;
-  real tau_r;
+  real<lower = 0> tau_l;
+  real<lower = 0> tau_r;
   
   //real<lower = 0> sigma[2];   // error scale
 }
@@ -83,11 +83,11 @@ model {
 
   // priors
   theta_ll[1] ~ normal(0.11, 0.009); //gamma
-  Lp ~ normal(0.49, 0.049); // length at puberty
-  Rm ~ normal(10.74, 2.5); // max reproduction
-  Lm ~ normal(4.77, 1.98);
-  tau_l ~ gamma(0.001, 0.001);
-  tau_r ~ gamma(0.001, 0.001);
+  Lp ~ normal(0.49, 0.14); // length at puberty
+  Rm ~ normal(10.74, 13.1); // max reproduction
+  Lm ~ normal(4.77, 1.2);
+  tau_l ~ gamma(0.001, 0.01);
+  tau_r ~ gamma(0.001, 0.01);
   // priors will be added for concentration 
   
  // theta[{2}] ~ normal(0.5,0.5); // cq
@@ -96,8 +96,19 @@ model {
   //sigma ~ lognormal(-1, 1);
   //z_init ~ lognormal(log(140), 1)
 
+  
+   // do the length estimation now
+  for(i in 1:22){ // days
+      
+      real z_ll_temp = z_ll[i,1];
+      // get the theoretical length
+      L0[i] = Lm*z_ll_temp;
+      
+      // fit observed length
+      l_y[i] ~ normal(L0[i], tau_l);
+      
+    }
   // do the reproduction estimation 
-    
   R0[1] = 0; // initialization of cumulated reproduction for the control
   eq0[1] = 0; // helper value/equation
     
@@ -116,20 +127,6 @@ model {
       // fit R
     r_y[y] ~ normal(R0[y], tau_r); // estimation step 
   }
-
-  
-  // do the length estimation now
-  
-  for(i in 1:22){ // days
-      
-      real z_ll_temp = z_ll[i,1];
-      // get the theoretical length
-      L0[i] = Lm*z_ll_temp;
-      
-      // fit observed length
-      l_y[i] ~ normal(L0[i], tau_l);
-      
-    }
 }
 // Uncertainty due to parameter estimation is rolled into the values of z_init
 // z, and sigma. The uncertainty due to unexplained variation and measurement 

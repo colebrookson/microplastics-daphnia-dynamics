@@ -67,14 +67,14 @@ transformed data {
 parameters {
   real<lower = 0> theta_ll[1]; // gamma & l
   //real<lower = 0> theta_cq[1]; // ke
-  real l_y_mis[N_mis];
+  real<lower = 0> l_y_mis[N_mis];
   real<lower = 0> cstar;
   real<lower = 0> NEC;
   real<lower = 0> Lp;
   real<lower = 0> Rm;
   real<lower = 0> Lm;
-  real tau_l;
-  real tau_r;
+  real<lower = 0> tau_l;
+  real<lower = 0> tau_r;
   
   //real<lower = 0> sigma[2];   // error scale
 }

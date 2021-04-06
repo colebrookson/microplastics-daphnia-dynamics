@@ -85,21 +85,29 @@ r_y_data = as.matrix(reproduction_data_x_removed %>%
                                    values_from = offspring, 
                                    values_fn = max))
 r_y_data = r_y_data[,2:ncol(r_y_data)]
+r_y_data_cumul = matrix(nrow = nrow(r_y_data), ncol = ncol(r_y_data))
+for(i in 1:nrow(r_y_data_cumul)) {
+  for(j in 1:ncol(r_y_data_cumul)){
+    
+    r_y_data_cumul[i,j] = sum(r_y_data[1:i,j])
+    
+  }
+}
 
 #declare all variables
 funct = function(t, y, p){
-  cq <- y[1]
+  cq = y[1]
   
   d_cq = ke*(400-cq)
   
   return(list(d_cq))
 }
 ke = 0.5
-parms <- c(ke)
+parms = c(ke)
 
-N0 <- 0
-TT <- seq(1,20,1) 
-results <- lsoda(N0,TT,funct,parms)
+N0 = 0
+TT = seq(1,22,1) 
+results = lsoda(N0,TT,funct,parms)
 
 N_obs = 10
 N_mis = 12
@@ -109,18 +117,19 @@ ll_init = 0.2
 cq = results[,2]
 l_y_obs = l_y_obs_data[,1]#this is taking first replicate (column)
 ts = 1:nrow(r_y_data)
-r_y = r_y_data[,1] #this is taking first replciate (column )
+r_y = r_y_data_cumul[,1] #this is taking first replciate (column )
 
 gen_0_ps400_data = list(
   N_obs = N_obs, 
   N_mis = N_mis,
   ll_init = array(ll_init),
-  cq_init = array(cq_init),
+  #cq_init = array(cq_init),
   ii_obs = ii_obs,
   ii_mis = ii_mis, 
   l_y_obs = l_y_obs,
   ts = ts,
-  r_y = r_y)
+  r_y = r_y,
+  cq = cq)
 
 # fit model ====================================================================
 gen_0_ps400_onerep_fit = stan(file = 
@@ -128,24 +137,27 @@ gen_0_ps400_onerep_fit = stan(file =
                                 data = gen_0_ps400_data,
                                 chains = 4,
                                 cores = 8,
-                                warmup = 2000,
-                                iter = 5000,
+                                warmup = 5000,
+                                iter = 10000,
                                 seed = 12,
                                 verbose = TRUE,
                                 #open_progress = TRUE,
-                                control = list(adapt_delta = 0.9)); beep(3)
+                                control = list(adapt_delta = 0.999,
+                                               max_treedepth = 12)); beep(3)
 saveRDS(gen_0_ps400_onerep_fit, 
         here('/output/intermediate-objects/gen_0_ps400_onerep_fit.RDS'))
 
 # diagnose model fit
 gen_0_ps400_summ = print(gen_0_ps400_onerep_fit, 
-                       pars=c("theta_ll[1]", "theta_cq[1]", "cstar", "NEC",
+                       pars=c("theta_ll[1]", "cstar", "NEC",
                               "Lp", "Rm", "Lm", "tau_l", "tau_r"),
                        probs=c(0.1, 0.5, 0.9), digits = 3)
 
-parms = c("theta_ll[1]", "theta_cq[1]", "cstar", "NEC",
+parms = c("theta_ll[1]", 
+          #"theta_cq[1]", 
+          "cstar", "NEC",
            "Lp", "Rm", "Lm", "tau_l", "tau_r")
-gen_0_fit_output1 = rstan::extract(gen_0_ps400_summ,
+gen_0_ps400_output = rstan::extract(gen_0_ps400_onerep_fit,
                                     permuted=TRUE,include=TRUE)
 
 gen_0_control_onerep_fit_Trace = stan_trace(gen_0_ps400_onerep_fit,parms)
@@ -154,18 +166,70 @@ gen_0_control_onerep_fit_Overlay = mcmc_dens_overlay(gen_0_ps400_onerep_fit,parm
 gen_0_control_onerep_fit_Violin = mcmc_violin(gen_0_ps400_onerep_fit,parms,probs = c(0.1, 0.5, 0.9))
 gen_0_control_onerep_fit_Pairs = mcmc_pairs(gen_0_ps400_onerep_fit,parms)
 
+# Data; density
+y_rep_ps400 = gen_0_ps400_output$r_y_rep
+y_rep_ps400 = data.frame(y_rep_ps400)
+y_rep_ps400 = as.matrix(y_rep_ps400)
+y_ps400_df = data.frame(r_y)
+y_ps400_df = as.vector(y_ps400_df$r_y, mode = 'numeric')
+color_scheme_set("green")
+P_plot_ps400 = ppc_dens_overlay(as.vector(y_ps400_df), y_rep_ps400[1:200,])+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    legend.position = 'none'
+  )+
+  labs(title="Empirical vs. Estimated Distribution \nof Cumulative Reproduction Data (PS400 Treatment)",
+       subtitle="Showing 200 Draws from the Posterior")
+ggsave(here('output/model-fit-figs/ps400_dens_overlay.png'), P_plot_ps400)
+
+# Data; time series
+Z_df_ps400 = data.frame(gen_0_ps400_output$r_y_rep)
+Z_means_ps400 = Z_df_ps400 %>% summarize(across(`X1`:`X22`, mean))
+Z_means_ps400 = t(Z_means_ps400)
+# Parse df by P and H
+# Invert dfs
+# Re-name columns 
+# Merge dfs
+Mega_df_ps400 = cbind(Z_means_ps400,
+                      data.frame(r_y), ts = seq(1,22,1))
+# Add time steps
+# Final df
+#Mega_df = cbind(Mega_df,ts)
+Post_By_Data_Plot_ps400 = ggplot(Mega_df_ps400,aes(x=ts))+
+  geom_line(aes(y=Z_means_ps400), colour="black", size = 1.5)+ 
+  geom_point(aes(y=r_y), shape = 21, fill="cornflowerblue", size = 3.2)+ 
+  xlab("Time Step")+
+  ylab("Cumulative Reproduction")+
+  ggtitle("Posterior Estimates Plotted Against Data")+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    legend.position = 'none',
+    axis.title = element_text(size = 17),
+    axis.text = element_text(size = 12),
+    plot.title = element_text(size = 20)
+  )
+ggsave(here('output/model-fit-figs/ps400_model_data.png'), 
+       Post_By_Data_Plot_ps400)
+ 
+
+
+
+
+
 funct = function(t, y, p){
-  cq <- y[1]
+  cq = y[1]
   
   d_cq = ke*(0-cq)
   
   return(list(d_cq))
 }
 ke = 0.5
-parms <- c(ke)
+parms = c(ke)
 
-N0 <- 0
-TT <- seq(1,20,1) 
-results <- lsoda(N0,TT,funct,parms)
+N0 = 0
+TT = seq(1,20,1) 
+results = lsoda(N0,TT,funct,parms)
 
 
