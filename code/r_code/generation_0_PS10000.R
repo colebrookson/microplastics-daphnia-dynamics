@@ -37,7 +37,8 @@ unique(reproduction_data$treatment)
 # keep only the LFC and generation 0
 reproduction_data = reproduction_data %>% 
   dplyr::select(-`X1`) %>% 
-  filter(treatment == 'PS_10000') 
+  filter(treatment == 'PS_10000',
+         generation == 0) 
 
 # make the length into mm
 growth_data = growth_data %>% 
@@ -64,7 +65,7 @@ reps_to_remove = reproduction_data %>%
   select(day, replicate, offspring) %>% 
   group_by(day, replicate) %>% 
   filter(offspring == 'X')
-unique(reps_to_remove$replicate)
+sort(unique(reps_to_remove$replicate))
 
 # remove reps that didn't surviv
 reproduction_data_x_removed = reproduction_data %>% 
@@ -99,7 +100,7 @@ for(i in 1:nrow(r_y_data_cumul)) {
 funct = function(t, y, p){
   cq = y[1]
   
-  d_cq = ke*(2000-cq)
+  d_cq = ke*(10000-cq)
   
   return(list(d_cq))
 }
@@ -120,7 +121,7 @@ l_y_obs = l_y_obs_data[,1]#this is taking first replicate (column)
 ts = 1:nrow(r_y_data)
 r_y = r_y_data_cumul[,1] #this is taking first replciate (column )
 
-gen_0_ps2000_data = list(
+gen_0_ps10000_data = list(
   N_obs = N_obs, 
   N_mis = N_mis,
   ll_init = array(ll_init),
@@ -133,8 +134,8 @@ gen_0_ps2000_data = list(
   cq = cq)
 
 # fit model ====================================================================
-gen_0_ps2000_onerep_fit = stan(file = 
-                                 here('./code/stan_files/organism_costs_model_gen0_ps2000.stan'),
+gen_0_ps10000_onerep_fit = stan(file = 
+                                 here('./code/stan_files/organism_costs_model_gen0_ps10000.stan'),
                                data = gen_0_ps2000_data,
                                chains = 4,
                                cores = 8,

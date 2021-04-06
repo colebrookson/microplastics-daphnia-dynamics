@@ -155,7 +155,8 @@ y_rep_control = as.matrix(y_rep_control)
 y_df_control = data.frame(r_y)
 y_df_control = as.vector(y_df_control$r_y, mode = 'numeric')
 color_scheme_set("green")
-P_plot_control = ppc_dens_overlay(as.vector(y_df_control), y_rep[1:200,])+
+P_plot_control = ppc_dens_overlay(as.vector(y_df_control),
+                                  y_rep_control[1:200,])+
   theme_bw()+
   theme(
     panel.grid = element_blank(),
@@ -179,11 +180,11 @@ Mega_df_control = cbind(Z_df_control_means,
 # Final df
 #Mega_df = cbind(Mega_df,ts)
 Post_By_Data_Plot_control = ggplot(Mega_df_control,aes(x=ts))+
-  geom_line(aes(y=Z_means), colour="black", size = 1.5)+ # Data P
+  geom_line(aes(y=Z_df_control_means), colour="black", size = 1.5)+ # Data P
   geom_point(aes(y=r_y), shape = 21, fill="cornflowerblue", size = 3.2)+ 
   xlab("Time Step")+
   ylab("Cumulative Reproduction")+
-  ggtitle("Posterior Estimates Plotted Against Data")+
+  ggtitle("Posterior Estimates Plotted Against Data \n(Control)")+
   theme_bw()+
   theme(
     panel.grid = element_blank(),

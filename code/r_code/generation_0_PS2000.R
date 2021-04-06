@@ -42,7 +42,7 @@ reproduction_data = reproduction_data %>%
 # make the length into mm
 growth_data = growth_data %>% 
   select(-`x1`) %>% 
-  filter(treatment == 'MP2000') %>% #keep only control treatment
+  filter(treatment == 'MP2000') %>% #keep only ps2000 treatment
   filter(test == 1) %>% 
   filter(day < 23) %>%
   mutate(length_mm = length*0.001)  
@@ -147,3 +147,77 @@ gen_0_ps2000_onerep_fit = stan(file =
                                              max_treedepth = 12)); beep(3)
 saveRDS(gen_0_ps2000_onerep_fit, 
         here('/output/intermediate-objects/gen_0_ps2000_onerep_fit.RDS'))
+gen_0_ps2000_onerep_fit = readRDS(here('/output/intermediate-objects/gen_0_ps2000_onerep_fit.RDS'))
+print(gen_0_ps2000_onerep_fit, 
+                         pars=c("theta_ll[1]", "cstar", "NEC",
+                                "Lp", "Rm", "Lm", "tau_l", "tau_r"),
+                         probs=c(0.1, 0.5, 0.9), digits = 3)
+
+parms = c("theta_ll[1]", 
+          #"theta_cq[1]", 
+          "cstar", "NEC",
+          "Lp", "Rm", "Lm", "tau_l", "tau_r")
+gen_0_ps2000_output = rstan::extract(gen_0_ps2000_onerep_fit,
+                                    permuted=TRUE,include=TRUE)
+
+gen_0_ps2000_onerep_fit_Trace = stan_trace(gen_0_ps2000_onerep_fit,parms)
+gen_0_ps2000_onerep_fit_Dens = mcmc_dens(gen_0_ps2000_onerep_fit,parms)
+gen_0_ps2000_onerep_fit_Overlay = mcmc_dens_overlay(gen_0_ps2000_onerep_fit,parms)
+gen_0_ps2000_onerep_fit_Violin = mcmc_violin(gen_0_ps2000_onerep_fit,parms,
+                                              probs = c(0.1, 0.5, 0.9))
+gen_0_ps2000_onerep_fit_Pairs = mcmc_pairs(gen_0_ps2000_onerep_fit,parms)
+gen_0_ps2000_onerep_fit_Trace
+gen_0_ps2000_onerep_fit_Dens
+gen_0_ps2000_onerep_fit_Overlay
+gen_0_ps2000_onerep_fit_Violin
+gen_0_ps2000_onerep_fit_Pairs
+
+# Data; density
+y_rep_ps2000 = gen_0_ps2000_output$r_y_rep
+y_rep_ps2000 = data.frame(y_rep_ps2000)
+y_rep_ps2000 = as.matrix(y_rep_ps2000)
+y_df_ps2000 = data.frame(r_y)
+y_df_ps2000 = as.vector(y_df_ps2000$r_y, mode = 'numeric')
+color_scheme_set("green")
+P_plot_ps2000 = ppc_dens_overlay(as.vector(y_df_ps2000),
+                                  y_rep_ps2000[1:200,])+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    legend.position = 'none'
+  )+
+  labs(title="Empirical vs. Estimated Distribution \nof Cumulative Reproduction Data (ps2000 Treatment)",
+       subtitle="Showing 200 Draws from the Posterior")
+ggsave(here('output/model-fit-figs/ps2000_dens_overlay.png'), P_plot_ps2000)
+
+# Data; time series
+Z_df_ps2000 = data.frame(gen_0_ps2000_output$r_y_rep)
+Z_df_ps2000_means = Z_df_ps2000 %>% summarize(across(`X1`:`X22`, mean))
+Z_df_ps2000_means = t(Z_df_ps2000_means)
+# Parse df by P and H
+# Invert dfs
+# Re-name columns 
+# Merge dfs
+Mega_df_ps2000 = cbind(Z_df_ps2000_means,
+                        data.frame(r_y), ts = seq(1,22,1))
+# Add time steps
+# Final df
+#Mega_df = cbind(Mega_df,ts)
+Post_By_Data_Plot_ps2000 = ggplot(Mega_df_ps2000,aes(x=ts))+
+  geom_line(aes(y=Z_df_ps2000_means), colour="black", size = 1.5)+ # Data P
+  geom_point(aes(y=r_y), shape = 21, fill="cornflowerblue", size = 3.2)+ 
+  xlab("Time Step")+
+  ylab("Cumulative Reproduction")+
+  ggtitle("Posterior Estimates Plotted Against Data \n(ps2000)")+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    legend.position = 'none',
+    axis.title = element_text(size = 17),
+    axis.text = element_text(size = 12),
+    plot.title = element_text(size = 20)
+  )
+ggsave(here('output/model-fit-figs/ps2000_model_data.png'), 
+       Post_By_Data_Plot_ps2000)
+
+

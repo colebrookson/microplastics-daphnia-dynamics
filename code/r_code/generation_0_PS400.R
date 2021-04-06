@@ -37,7 +37,8 @@ unique(reproduction_data$treatment)
 # keep only the LFC and generation 0
 reproduction_data = reproduction_data %>% 
   dplyr::select(-`X1`) %>% 
-  filter(treatment == 'PS_400') 
+  filter(treatment == 'PS_400',
+         generation == 0) 
 
 # make the length into mm
 growth_data = growth_data %>% 
@@ -201,7 +202,7 @@ Post_By_Data_Plot_ps400 = ggplot(Mega_df_ps400,aes(x=ts))+
   geom_point(aes(y=r_y), shape = 21, fill="cornflowerblue", size = 3.2)+ 
   xlab("Time Step")+
   ylab("Cumulative Reproduction")+
-  ggtitle("Posterior Estimates Plotted Against Data")+
+  ggtitle("Posterior Estimates Plotted Against Data \n(PS 400)")+
   theme_bw()+
   theme(
     panel.grid = element_blank(),
