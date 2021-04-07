@@ -59,7 +59,14 @@ l_y_obs_data = as.matrix(growth_data %>%
                                        values_from = length_mm) %>% 
                            select_if(~ !any(is.na(.))) %>% 
                            select(-day))
-
+l_y_for_post = data.frame(growth_data %>% 
+                            filter(day < 22) %>% 
+                            select(day, length_mm, replicate) %>% 
+                            pivot_wider(id_cols = c(replicate, day, length_mm),
+                                        names_from = replicate,
+                                        values_from = length_mm) %>% 
+                            select_if(~ !any(is.na(.))))[,1:2]
+l_y_for_post$day = l_y_for_post$day + 1
 # identify replicates that didn't survive
 reps_to_remove = reproduction_data %>% 
   select(day, replicate, offspring) %>% 
@@ -132,6 +139,11 @@ gen_0_ps400_data = list(
   r_y = r_y,
   cq = cq)
 
+ps400_post_data = data.frame(cbind(ts, r_y, conc = rep(400,22)))
+ps400_post_data = left_join(ps400_post_data, l_y_for_post,
+                             by = c('ts' = 'day')) %>% 
+  rename(reproduction = r_y, length = `X3`)
+write_csv(ps400_post_data, here('data/processed-data/ps400_post_data.csv'))
 # fit model ====================================================================
 gen_0_ps400_onerep_fit = stan(file = 
                 here('./code/stan_files/organism_costs_model_gen0_ps400.stan'),
