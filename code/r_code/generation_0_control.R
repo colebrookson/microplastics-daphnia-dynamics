@@ -34,7 +34,8 @@ reproduction_data = read_csv(paste0(dir, 'offspring_data.csv'),
 # keep only the LFC and generation 0
 reproduction_data = reproduction_data %>% 
   dplyr::select(-`X1`) %>% 
-  filter(treatment == 'LFC') 
+  filter(treatment == 'LFC',
+         generation == 0) 
 
 # make the length into mm
 growth_data = growth_data %>% 
