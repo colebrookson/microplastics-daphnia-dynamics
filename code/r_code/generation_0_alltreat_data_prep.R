@@ -287,3 +287,5 @@ r_y_data_10000 = as.matrix(reproduction_data_x_removed_10000 %>%
                                          values_from = offspring, 
                                          values_fn = max))
 r_y_data_10000 = r_y_data_10000[,2:ncol(r_y_data_10000)]
+
+

@@ -100,7 +100,7 @@ ii_mis = c(2, 4, 5, 7, 9, 11, 12, 14, 16, 18, 19, 21)
 ll_init = 0.2
 l_y_obs = l_y_obs_data[,1]#this is taking first replicate (column)
 ts = 1:nrow(r_y_data)
-r_y = r_y_data_cumul[,1] #this is taking first replciate (column )
+r_y = round(rowMeans(r_y_data_cumul)) #this is taking first replciate (column )
 
 gen_0_control_onerep_data = list(
   N_obs = N_obs, 

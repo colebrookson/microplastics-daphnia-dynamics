@@ -25,6 +25,7 @@ library(deSolve)
 library(zoo)
 library(PNWColors)
 library(patchwork)
+library(ggsci)
 detectCores()
 
 
@@ -60,14 +61,22 @@ gen_0_alltreat_data = list(
 )
 
 # fit model ====================================================================
+warmups = 2000
+total_iterations = 5000
+max_treedepth = 10
+adapt_delta = 0.999
+n_cores = 4
+n_chains = 4
+
 gen_0_alltreat_onerep_fit = 
   stan(file = here('./code/stan_files/organism_costs_model_gen0_alltreat.stan'),
        data = gen_0_alltreat_data,
        chains = 4,
        cores = 8,
-       warmup = 2000,
-       iter = 5000,
+       warmup = warmups,
+       iter = total_iterations,
        seed = 1,
+       refresh = 100,
        verbose = TRUE,
        init = list(
          list(theta_ll[1] = 0.2,
@@ -100,15 +109,41 @@ gen_0_alltreat_onerep_fit =
               Lm = 41),
        ),
        #open_progress = TRUE,
-       control = list(adapt_delta = 0.999)); beep(3)
+       control = list(adapt_delta = adapt_delta,
+                      max_treedepth = max_treedepth)); beep(3)
 saveRDS(gen_0_alltreat_onerep_fit, 
         here('/output/intermediate-objects/gen_0_alltreat_onerep_fit.RDS'))
 
 # diagnose model problems ======================================================
+plot(gen_0_alltreat_onerep_fit)
+check_divergences(gen_0_alltreat_onerep_fit)
 
+gen0_diagnostics = get_sampler_params(gen_0_alltreat_onerep_fit) %>% 
+  set_names(1:4) %>% 
+  map_df(as_tibble, .id = "chain") %>% 
+  group_by(chain) %>% 
+  mutate(iteration = 1:length(chain)) %>% 
+  mutate(warmup = iteration <= warmups)
 
+percent_divergent_rungs = gen0_diagnostics %>% 
+  group_by(warmup, chain) %>% 
+  summarize(percent_divergent = mean(divergent__ > 0)) %>% 
+  ggplot() + 
+  geom_col(aes(chain, percent_divergent, fill = warmup), position = "dodge",
+           colour = "black") +
+  scale_y_continuous(labels = scales::percent, name = "% Divergent Runs") +
+  scale_fill_npg()
+tree_depth = gen0_diagnostics %>% 
+  ggplot(aes(iteration, treedepth__, colour = chain)) + 
+  geom_line() +
+  geom_hline(aes(yintercept = 10), colour = 'red') +
+  scale_colour_locuszoom()
+step_size = gen0_diagnostics %>% 
+  ggplot(aes(iteration, stepsize__, colour = chain)) +
+  geom_line() +
+  scale_colour_locuszoom()
 
-
+# look at output/make plots ====================================================
 print(gen_0_alltreat_onerep_fit, 
       pars=c("theta_ll[1]", "theta_cq[1]", "cstar", "NEC",
              "Lp", "Rm", "Lm", "tau_l", "tau_r"),
