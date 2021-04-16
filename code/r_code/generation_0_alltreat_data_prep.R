@@ -12,6 +12,10 @@
 
 # set-up =======================================================================
 
+library(here)
+library(tidyverse)
+library(zoo)
+
 dir = 'C:/Users/brookson/Documents/Github/Schur-etal-Data/' #private data repo
 
 growth_data = read_csv(paste0(dir, 'growth_data_gen0.csv'))

@@ -145,7 +145,7 @@ transformed data {
 parameters {
   real<lower = 0> theta_ll[1]; // gamma & l
   real<lower = 0> theta_cq[1]; // ke
-  real<lower = 0> cstar;
+  real<lower = 0, upper = 10000> cstar;
   real<lower = 0> NEC;
   real<lower = 0> Lp;
   real<lower = 0> Rm;
@@ -239,9 +239,9 @@ model {
 
   // priors
   theta_ll[1] ~ normal(0.11, 0.009); //gamma
-  theta_cq[1] ~ normal(0, 1); //ke
-  cstar ~ normal(0, 5000); // tolerance concentration
-  NEC ~ normal(0, 2000); // no effect concentration 
+  theta_cq[1] ~ normal(0, 2); //ke
+  log(cstar) ~ normal(0, 5000); // tolerance concentration
+  log(NEC) ~ normal(0, 2000); // no effect concentration 
   Lp ~ normal(0.49, 0.049); // length at puberty
   Rm ~ normal(10.74, 13.1044); // max reproduction
   Lm ~ normal(4.77, 1.98);
@@ -271,10 +271,11 @@ model {
     real z_cq_10000_temp = z_10000_cq[y,1]; 
     
     real s_cq_con = 0; 
-    real s_cq_400 = cstar*(fmax(0, (z_cq_400_temp-NEC)));
-    real s_cq_2000 = cstar*(fmax(0, (z_cq_2000_temp-NEC)));
-    real s_cq_10000 = cstar*(fmax(0, (z_cq_10000_temp-NEC)));
-    
+    real s_cq_400 = (cstar^(-1))*(fmax(0, (z_cq_400_temp-NEC)));
+    real s_cq_2000 = (cstar^(-1))*(fmax(0, (z_cq_2000_temp-NEC)));
+    real s_cq_10000 = (cstar^(-1))*(fmax(0, (z_cq_10000_temp-NEC)));
+    //print("s_cq_400: ", s_cq_400, "s_cq_2000: ", s_cq_2000, 
+    //"s_cq_10000: ", s_cq_10000)
     // equation that is either 0 or 1, 1 if the scaled length is > Lp
     if (z_ll_con_temp <= Lp)
       eq0[y] = 0;
@@ -387,13 +388,13 @@ generated quantities {
     real s_cq_con_rep = 0; 
     real z_ll_400_temp_rep = z_ll_400[y,1];
     real z_cq_400_temp_rep = z_400_cq[y,1]; 
-    real s_cq_400_rep = cstar*(fmax(0, (z_cq_400_temp_rep-NEC))); 
+    real s_cq_400_rep = (cstar^(-1))*(fmax(0, (z_cq_400_temp_rep-NEC))); 
     real z_ll_2000_temp_rep = z_ll_2000[y,1];
     real z_cq_2000_temp_rep = z_2000_cq[y,1]; 
-    real s_cq_2000_rep = cstar*(fmax(0, (z_cq_2000_temp_rep-NEC))); 
+    real s_cq_2000_rep = (cstar^(-1))*(fmax(0, (z_cq_2000_temp_rep-NEC))); 
     real z_ll_10000_temp_rep = z_ll_10000[y,1];
     real z_cq_10000_temp_rep = z_10000_cq[y,1]; 
-    real s_cq_10000_rep = cstar*(fmax(0, (z_cq_10000_temp_rep-NEC))); 
+    real s_cq_10000_rep = (cstar^(-1))*(fmax(0, (z_cq_10000_temp_rep-NEC))); 
   
     
     // equation that is either 0 or 1, 1 if the scaled length is > Lp

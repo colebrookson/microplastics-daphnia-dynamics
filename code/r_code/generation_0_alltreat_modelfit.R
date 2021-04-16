@@ -28,13 +28,10 @@ library(patchwork)
 library(ggsci)
 detectCores()
 
-
-
-
 # assign values ================================================================
  
 ll_init = 0.2
-cq_init = 0.1
+cq_init = 0
 l_y_obs_con = l_y_for_post_con[,2]
 l_y_obs_400 = l_y_for_post_400[,2]
 l_y_obs_2000 = l_y_for_post_2000[,2]
@@ -43,7 +40,7 @@ r_y_con = rowMeans(r_y_data_cumul_con)
 r_y_400 = rowMeans(r_y_data_cumul_400)
 r_y_2000 = rowMeans(r_y_data_cumul_2000)
 r_y_10000 = r_y_data_10000
-ts = 1:nrow(r_y_data)
+ts = 1:nrow(r_y_data_cumul_2000)
 
 gen_0_alltreat_data = list(
   ll_init = array(ll_init),
@@ -63,7 +60,7 @@ gen_0_alltreat_data = list(
 # fit model ====================================================================
 warmups = 2000
 total_iterations = 5000
-max_treedepth = 10
+max_treedepth = 12
 adapt_delta = 0.999
 n_cores = 4
 n_chains = 4
@@ -77,48 +74,51 @@ gen_0_alltreat_onerep_fit =
        iter = total_iterations,
        seed = 1,
        refresh = 1000,
-       #verbose = TRUE,
+       verbose = TRUE,
        init = list(
          list(`theta_ll[1]` = 0.2,
-              `theta_cq[1]` = 1.5, 
-              cstar = 5000, 
+              `theta_cq[1]` = 1.5,
+              cstar = 5000,
               NEC = 2000,
               Lp = 0.9,
               Rm = 10,
               Lm = 4
               ),
          list(`theta_ll[1]` = 0.02,
-              `theta_cq[1]` = 2, 
-              cstar = 6000, 
+              `theta_cq[1]` = 2,
+              cstar = 6000,
               NEC = 1500,
               Lp = 0.2,
               Rm = 5,
               Lm = 2
               ),
          list(`theta_ll[1]` = 0.1,
-              `theta_cq[1]` = 0.6, 
-              cstar = 7000, 
+              `theta_cq[1]` = 0.6,
+              cstar = 7000,
               NEC = 6000,
               Lp = 0.1,
               Rm = 15,
               Lm = 1
               ),
          list(`theta_ll[1]` = 0.9,
-              `theta_cq[1]` = 5, 
-              cstar = 4000, 
+              `theta_cq[1]` = 5,
+              cstar = 4000,
               NEC = 3000,
               Lp = 1.6,
               Rm = 19,
               Lm = 41
               )
        ),
-       #open_progress = TRUE,
+       open_progress = TRUE,
        control = list(adapt_delta = adapt_delta,
                       max_treedepth = max_treedepth)
        ); beep(3)
 saveRDS(gen_0_alltreat_onerep_fit, 
         here('/output/intermediate-objects/gen_0_alltreat_onerep_fit.RDS'))
-
+parms = c("theta_ll[1]", 
+          "theta_cq[1]", 
+          "cstar", "NEC",
+          "Lp", "Rm", "Lm", "tau_l", "tau_r")
 # diagnose model problems ======================================================
 plot(gen_0_alltreat_onerep_fit)
 check_divergences(gen_0_alltreat_onerep_fit)
