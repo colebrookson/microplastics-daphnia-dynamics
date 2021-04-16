@@ -60,8 +60,8 @@ gen_0_alltreat_data = list(
 # fit model ====================================================================
 warmups = 2000
 total_iterations = 5000
-max_treedepth = 12
-adapt_delta = 0.999
+max_treedepth = 10
+adapt_delta = 0.99
 n_cores = 4
 n_chains = 4
 
@@ -73,43 +73,43 @@ gen_0_alltreat_onerep_fit =
        warmup = warmups,
        iter = total_iterations,
        seed = 1,
-       refresh = 1000,
-       verbose = TRUE,
-       init = list(
-         list(`theta_ll[1]` = 0.2,
-              `theta_cq[1]` = 1.5,
-              cstar = 5000,
-              NEC = 2000,
-              Lp = 0.9,
-              Rm = 10,
-              Lm = 4
-              ),
-         list(`theta_ll[1]` = 0.02,
-              `theta_cq[1]` = 2,
-              cstar = 6000,
-              NEC = 1500,
-              Lp = 0.2,
-              Rm = 5,
-              Lm = 2
-              ),
-         list(`theta_ll[1]` = 0.1,
-              `theta_cq[1]` = 0.6,
-              cstar = 7000,
-              NEC = 6000,
-              Lp = 0.1,
-              Rm = 15,
-              Lm = 1
-              ),
-         list(`theta_ll[1]` = 0.9,
-              `theta_cq[1]` = 5,
-              cstar = 4000,
-              NEC = 3000,
-              Lp = 1.6,
-              Rm = 19,
-              Lm = 41
-              )
-       ),
-       open_progress = TRUE,
+       refresh = 500,
+       #verbose = TRUE,
+       # init = list(
+       #   list(`theta_ll[1]` = 0.2,
+       #        `theta_cq[1]` = 1.5,
+       #        cstar = 5000,
+       #        NEC = 2000,
+       #        Lp = 0.9,
+       #        Rm = 10,
+       #        Lm = 4
+       #        ),
+       #   list(`theta_ll[1]` = 0.02,
+       #        `theta_cq[1]` = 2,
+       #        cstar = 6000,
+       #        NEC = 1500,
+       #        Lp = 0.2,
+       #        Rm = 5,
+       #        Lm = 2
+       #        ),
+       #   list(`theta_ll[1]` = 0.1,
+       #        `theta_cq[1]` = 0.6,
+       #        cstar = 7000,
+       #        NEC = 6000,
+       #        Lp = 0.1,
+       #        Rm = 15,
+       #        Lm = 1
+       #        ),
+       #   list(`theta_ll[1]` = 0.9,
+       #        `theta_cq[1]` = 5,
+       #        cstar = 4000,
+       #        NEC = 3000,
+       #        Lp = 1.6,
+       #        Rm = 19,
+       #        Lm = 41
+       #        )
+       # ),
+       #open_progress = TRUE,
        control = list(adapt_delta = adapt_delta,
                       max_treedepth = max_treedepth)
        ); beep(3)
