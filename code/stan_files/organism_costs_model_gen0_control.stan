@@ -25,32 +25,17 @@ functions { // dz_dt holds all state variables (in our case 6)
 }
 data {
   // length data
-  int<lower = 0> N_obs;
-  int<lower = 0> N_mis;
-  // the following two arrays contain the indexes of the final array l_y which
-  // is the observed data (coded as a data vector l_y_obs) and the missing data
-  // (coded as a parameter vector )
   real ll_init[1]; // initial length value 
-  int<lower = 1, upper = N_obs + N_mis> ii_obs[N_obs]; // location of data
-  int<lower = 1, upper = N_obs + N_mis> ii_mis[N_mis]; // location of missing data
-  real<lower = 0> l_y_obs[N_obs];
   
   // reproduction data
   real ts[22]; // time points
   real r_y[22]; // cumulative reproduction  
+  real l_y_obs[22];
 
 }
-transformed data {
-  
-  int<lower = 0> N = N_obs + N_mis;
-  //real x_r[1];
-  //int x_i[0];
-  
-  
-}
+
 parameters {
   real<lower = 0> theta_ll[1]; // gamma & l
-  real <lower = 0>l_y_mis[N_mis];
   real<lower = 0> Lp;
   real<lower = 0> Rm;
   real<lower = 0> Lm;
@@ -70,10 +55,6 @@ transformed parameters {
                          rep_array(0.0, 0), 
                          rep_array(0, 0),
                           1e-5, 1e-3, 5e2);
-  
-  real l_y[N]; // length data 
-  l_y[ii_obs] = l_y_obs; // location in length data we have observations
-  l_y[ii_mis] = l_y_mis; // location in length data we have missing data 
 }
 model {
   // definitions of values
@@ -105,7 +86,7 @@ model {
       L0[i] = Lm*z_ll_temp;
       
       // fit observed length
-      l_y[i] ~ normal(L0[i], tau_l);
+      l_y_obs[i] ~ normal(L0[i], tau_l);
       
     }
   // do the reproduction estimation 

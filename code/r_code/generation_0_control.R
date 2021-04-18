@@ -93,24 +93,20 @@ for(i in 1:nrow(r_y_data_cumul)) {
 }
 
 #declare all variables
-N_obs = 10
-N_mis = 12
-ii_obs = c(1, 3, 6, 8, 10, 13, 15, 17, 20, 22)
-ii_mis = c(2, 4, 5, 7, 9, 11, 12, 14, 16, 18, 19, 21) 
+
 ll_init = 0.2
-l_y_obs = l_y_obs_data[,1]#this is taking first replicate (column)
+l_y_obs = 
 ts = 1:nrow(r_y_data)
 r_y = round(rowMeans(r_y_data_cumul)) #this is taking first replciate (column )
+l_y_obs_con = l_y_for_post_con[,2]
+r_y_con = rowMeans(r_y_data_cumul_con)
+ts = 1:length(r_y_con)
 
 gen_0_control_onerep_data = list(
-  N_obs = N_obs, 
-  N_mis = N_mis,
   ll_init = array(ll_init),
-  ii_obs = ii_obs,
-  ii_mis = ii_mis, 
-  l_y_obs = l_y_obs,
+  l_y_obs = l_y_obs_con,
   ts = ts,
-  r_y = r_y)
+  r_y = r_y_con)
 
 # fit model ====================================================================
 gen_0_control_onerep_fit = stan(file = 
@@ -124,7 +120,7 @@ gen_0_control_onerep_fit = stan(file =
                          verbose = TRUE,
                          #open_progress = TRUE,
                          control = list(adapt_delta = 0.999,
-                                        max_treedepth = 12)); beep(3)
+                                        max_treedepth = 10)); beep(3)
 saveRDS(gen_0_control_onerep_fit, here('/output/intermediate-objects/gen_0_fit_onerep.RDS'))
 gen_0_control_onerep_fit = 
   readRDS(here('/output/intermediate-objects/gen_0_fit_onerep.RDS'))
