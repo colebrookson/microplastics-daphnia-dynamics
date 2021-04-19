@@ -16,15 +16,14 @@ functions { // dz_dt holds all state variables (in our case 6)
                int[] x_i) {
     real l_con = z_ll_con[1];
     real cq_con = z_ll_con[2];
-    
 
     real gamma = theta_ll[1];
     real ke = theta_ll[2];
     
     real dl_con_dt = gamma*(1-l_con);
-    real d_con_cq = ke*(0-cq_con);
+    real dl_con_cq = 0*(400-cq_con);
 
-    return { dl_con_dt, d_con_cq };
+    return { dl_con_dt, dl_con_cq };
   }
   real[] dll_400_dt(real t, 
                real[] z_ll_400, // specifying the output   
@@ -78,8 +77,8 @@ functions { // dz_dt holds all state variables (in our case 6)
 }
 data {
 
-  real ll_init[1]; // initial length value 
-  real cq_init[1]; // initial concentration value
+  real ll_init[2]; // initial length value 
+  //real ll_init_con[1]; // initial concentration value
   // real cq_init[1];
 
   // reproduction data
@@ -173,8 +172,8 @@ model {
   // priors
   theta_ll[1] ~ normal(0.11, 0.009); //gamma
   theta_ll[2] ~ normal(0, 2); //ke
-  cstar ~ normal(0, 7000); // tolerance concentration
-  NEC ~ normal(0, 5000); // no effect concentration 
+  log(cstar) ~ normal(0, 7000); // tolerance concentration
+  log(NEC) ~ normal(0, 5000); // no effect concentration 
   Lp ~ normal(0.49, 0.049); // length at puberty
   Rm ~ normal(10.74, 13.1044); // max reproduction
   Lm ~ normal(4.77, 1.98);

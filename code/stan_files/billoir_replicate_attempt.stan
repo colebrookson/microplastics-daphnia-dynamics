@@ -26,9 +26,9 @@ functions { // dz_dt holds all state variables (in our case 6)
     
     real dl_con_dt = gamma*(1-l_con*
                     (1+(cstar^(-1))*(fmax(0, (cq_con-NEC)))));
-    real d_con_cq = ke*(0-cq_con);
+    real dl_con_cq = 0*(0.074-cq_con);
 
-    return { dl_con_dt, d_con_cq };
+    return { dl_con_dt, dl_con_cq };
   }
   real[] dll_400_dt(real t, 
                real[] z_ll_400, // specifying the output   
@@ -92,6 +92,7 @@ functions { // dz_dt holds all state variables (in our case 6)
 data {
 
   real ll_init[2]; // initial length value 
+  //real ll_init_con[1];
   //real cq_init[1]; // initial concentration value
   // real cq_init[1];
 

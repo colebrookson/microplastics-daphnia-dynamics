@@ -133,7 +133,7 @@ ts = 1:21
 
 billoir_data = list(
   ll_init = c(ll_init, cq_init),
-  ll_init_con = array(ll_init),
+  #ll_init_con = array(ll_init),
   #cq_init = array(cq_init),
   #cq_init = array(cq_init),
   ts = ts,
@@ -150,7 +150,7 @@ billoir_data = list(
 warmups = 2000
 total_iterations = 5000
 max_treedepth = 10
-adapt_delta = 0.99
+adapt_delta = 0.999
 n_cores = 4
 n_chains = 4
 
