@@ -132,8 +132,9 @@ r_y_10000 = rep_3
 ts = 1:21
 
 billoir_data = list(
-  ll_init = array(ll_init),
-  cq_init = array(cq_init),
+  ll_init = c(ll_init, cq_init),
+  ll_init_con = array(ll_init),
+  #cq_init = array(cq_init),
   #cq_init = array(cq_init),
   ts = ts,
   l_y_obs_con = l_y_obs_con,
@@ -153,7 +154,7 @@ adapt_delta = 0.99
 n_cores = 4
 n_chains = 4
 
-gen_0_alltreat_onerep_fit = 
+billoir_fit = 
   stan(file = here('./code/stan_files/billoir_replicate_attempt.stan'),
        data = billoir_data,
        chains = n_chains,
@@ -167,3 +168,134 @@ gen_0_alltreat_onerep_fit =
        control = list(adapt_delta = adapt_delta,
                       max_treedepth = max_treedepth)
   ); beep(3)
+
+# diagnose model problems ======================================================
+plot(billoir_fit)
+check_divergences(billoir_fit)
+
+gen0_diagnostics = get_sampler_params(billoir_fit) %>% 
+  set_names(1:4) %>% 
+  map_df(as_tibble, .id = "chain") %>% 
+  group_by(chain) %>% 
+  mutate(iteration = 1:length(chain)) %>% 
+  mutate(warmup = iteration <= warmups)
+
+percent_divergent_rungs = gen0_diagnostics %>% 
+  group_by(warmup, chain) %>% 
+  summarize(percent_divergent = mean(divergent__ > 0)) %>% 
+  ggplot() + 
+  geom_col(aes(chain, percent_divergent, fill = warmup), position = "dodge",
+           colour = "black") +
+  scale_y_continuous(labels = scales::percent, name = "% Divergent Runs") +
+  scale_fill_npg()
+tree_depth = gen0_diagnostics %>% 
+  ggplot(aes(iteration, treedepth__, colour = chain)) + 
+  geom_line() +
+  geom_hline(aes(yintercept = 10), colour = 'red') +
+  scale_colour_locuszoom()
+step_size = gen0_diagnostics %>% 
+  ggplot(aes(iteration, stepsize__, colour = chain)) +
+  geom_line() +
+  scale_colour_locuszoom()
+
+# look at output/make plots ====================================================
+print(billoir_fit, 
+      pars=c("theta_ll[1]", "theta_ll[2]", "theta_ll[3]", "theta_ll[4]",
+             "Lp", "Rm", "Lm", "tau_l", "tau_r"),
+      probs=c(0.1, 0.5, 0.9), digits = 3)
+parms=c("theta_ll[1]", "theta_ll[2]", "theta_ll[3]", "theta_ll[4]",
+       "Lp", "Rm", "Lm", "tau_l", "tau_r")
+gen_0_alltreat_onerep_fit_Trace = stan_trace(billoir_fit,parms)
+gen_0_alltreat_onerep_fit_Dens = mcmc_dens(gen_0_alltreat_onerep_fit,parms)
+gen_0_alltreat_onerep_fit_Overlay = mcmc_dens_overlay(gen_0_alltreat_onerep_fit,parms)
+gen_0_alltreat_onerep_fit_Violin = mcmc_violin(gen_0_alltreat_onerep_fit,parms,
+                                               probs = c(0.1, 0.5, 0.9))
+
+gen_0_alltreat_output = rstan::extract(billoir_fit,
+                                       permuted=TRUE,include=TRUE)
+
+# make reproduction data
+rep_con = data.frame(gen_0_alltreat_output$r_y_con_rep) %>% 
+  summarize(across(`X1`:`X22`, mean)) %>% 
+  t()
+rep_400 = data.frame(gen_0_alltreat_output$r_y_400_rep) %>% 
+  summarize(across(`X1`:`X22`, mean)) %>% 
+  t()
+rep_2000 = data.frame(gen_0_alltreat_output$r_y_2000_rep) %>% 
+  summarize(across(`X1`:`X22`, mean)) %>% 
+  t()
+rep_10000 = data.frame(gen_0_alltreat_output$r_y_10000_rep) %>% 
+  summarize(across(`X1`:`X22`, mean)) %>% 
+  t()
+
+concs = c(rep(0, 22), rep(400, 22), rep(2000, 22), rep(10000, 22))
+rep_data = c(r_y_con, r_y_400, r_y_2000, r_y_10000)
+
+repro_plot_data = data.frame(concs, 
+                             rep_data,
+                             predictions = c(as.vector(rep_con[,1]), 
+                                             as.vector(rep_400[,1]), 
+                                             as.vector(rep_2000[,1]), 
+                                             as.vector(rep_10000[,1])),
+                             time = rep(seq(1,22,1),4))
+repro_plot_data$concs = factor(as.character(repro_plot_data$concs))
+repro_plot_data$concs = factor(repro_plot_data$concs, 
+                               levels = c('0', '400', '2000', '10000'))
+# length dataframe 
+len_con = data.frame(gen_0_alltreat_output$l_y_con_rep) %>% 
+  summarize(across(`X1`:`X22`, mean)) %>% 
+  t()
+len_400 = data.frame(gen_0_alltreat_output$l_y_400_rep) %>% 
+  summarize(across(`X1`:`X22`, mean)) %>% 
+  t()
+len_2000 = data.frame(gen_0_alltreat_output$l_y_2000_rep) %>% 
+  summarize(across(`X1`:`X22`, mean)) %>% 
+  t()
+len_10000 = data.frame(gen_0_alltreat_output$l_y_10000_rep) %>% 
+  summarize(across(`X1`:`X22`, mean)) %>% 
+  t()
+
+len_data = c(l_y_obs_con, l_y_obs_400, l_y_obs_2000, l_y_obs_10000)
+
+len_plot_data = data.frame(concs, 
+                           len_data,
+                           predictions = c(as.vector(len_con[,1]), 
+                                           as.vector(len_400[,1]), 
+                                           as.vector(len_2000[,1]), 
+                                           as.vector(len_10000[,1])),
+                           time = rep(seq(1,22,1),4))
+len_plot_data$concs = factor(as.character(len_plot_data$concs))
+len_plot_data$concs = factor(lenro_plot_data$concs, 
+                             levels = c('0', '400', '2000', '10000'))
+
+all_treat_reproduction = ggplot(data = repro_plot_data) +
+  geom_point(aes(x = time, y = rep_data, 
+                 colour = as.factor(as.character(concs))),
+             size = 1.7) +
+  geom_line(aes(x = time, y = predictions, 
+                colour = as.factor(as.character(concs))),
+            size = 1.3,
+            position = position_dodge(width = 2)) + 
+  labs(x = 'Time (days)', y = 'Cumulative Reproduction (neonates)') +
+  scale_colour_manual("Concentrations (particles/mL)", 
+                      values = pnw_palette('Starfish', 4, type = 'discrete')[1:4]) +
+  theme_bw()
+
+all_treat_length = ggplot(data = len_plot_data) +
+  geom_point(aes(x = time, y = len_data, 
+                 colour = as.factor(as.character(concs))),
+             size = 1.7) +
+  geom_line(aes(x = time, y = predictions, 
+                colour = as.factor(as.character(concs))),
+            size = 1.3,
+            position = position_dodge(width = 2)) + 
+  labs(x = 'Time (days)', y = 'Length (mm)') +
+  scale_colour_manual("Concentrations (particles/mL)", 
+                      values = pnw_palette('Starfish', 4, type = 'discrete')[1:4]) +
+  theme_bw() +
+  theme(
+    legend.position = 'none'
+  )
+
+rep_len_plot = all_treat_reproduction + all_treat_length
+
