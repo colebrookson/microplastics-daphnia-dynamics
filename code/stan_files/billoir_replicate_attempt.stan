@@ -26,7 +26,7 @@ functions { // dz_dt holds all state variables (in our case 6)
     
     real dl_con_dt = gamma*(1-l_con*
                     (1+(cstar^(-1))*(fmax(0, (cq_con-NEC)))));
-    real dl_con_cq = 0*(0.074-cq_con);
+    real dl_con_cq = ke*(0-cq_con);
 
     return { dl_con_dt, dl_con_cq };
   }
@@ -46,7 +46,7 @@ functions { // dz_dt holds all state variables (in our case 6)
     
     real dl_400_dt = gamma*(1-l_400*
                     (1+(cstar^(-1))*(fmax(0, (cq_400-NEC)))));
-    real d_400_cq = ke*(0.074-cq_400);
+    real d_400_cq = ke*(0-cq_400);
 
     return { dl_400_dt, d_400_cq };
   }  real[] dll_2000_dt(real t, 
@@ -65,7 +65,7 @@ functions { // dz_dt holds all state variables (in our case 6)
     
     real dl_2000_dt = gamma*(1-l_2000*
                     (1+(cstar^(-1))*(fmax(0, (cq_2000-NEC)))));
-    real d_2000_cq = ke*(0.22-cq_2000);
+    real d_2000_cq = ke*(0-cq_2000);
 
     return { dl_2000_dt, d_2000_cq };
   }  real[] dll_10000_dt(real t, 
@@ -84,7 +84,7 @@ functions { // dz_dt holds all state variables (in our case 6)
     
     real dl_10000_dt = gamma*(1-l_10000*
                     (1+(cstar^(-1))*(fmax(0, (cq_10000-NEC)))));
-    real d_10000_cq = ke*(0.66-cq_10000);
+    real d_10000_cq = ke*(0-cq_10000);
 
     return { dl_10000_dt, d_10000_cq };
   }

@@ -21,7 +21,7 @@ functions { // dz_dt holds all state variables (in our case 6)
     real ke = theta_ll[2];
     
     real dl_con_dt = gamma*(1-l_con);
-    real dl_con_cq = 0*(400-cq_con);
+    real dl_con_cq = ke*(0-cq_con);
 
     return { dl_con_dt, dl_con_cq };
   }
@@ -105,7 +105,7 @@ transformed data {
 }
 parameters {
   real<lower = 0> theta_ll[2]; // gamma & l
-  real<lower = 0, upper = 15000> cstar;
+  real<lower = 0> cstar;
   real<lower = 0> NEC;
   real<lower = 0> Lp;
   real<lower = 0> Rm;
@@ -194,7 +194,7 @@ model {
   for(y in 2:22){ // every day from 2 to 21
       
     real z_ll_con_temp = z_ll_con[y,1];// value from the ode solver  for length
-    //real z_cq_con_temp = z_con_cq[y,1]; // value from ode solver for cq
+    real z_cq_con_temp = z_ll_con[y,2]; // value from ode solver for cq
     real z_ll_400_temp = z_ll_400[y,1];
     real z_cq_400_temp = z_ll_400[y,2]; 
     real z_ll_2000_temp = z_ll_2000[y,1];
@@ -202,10 +202,18 @@ model {
     real z_ll_10000_temp = z_ll_10000[y,1];
     real z_cq_10000_temp = z_ll_10000[y,2]; 
     
-    real s_cq_con = 0; 
+
+    
+    real s_cq_con = (cstar^(-1))*(fmax(0, (z_cq_con_temp-NEC))); 
     real s_cq_400 = (cstar^(-1))*(fmax(0, (z_cq_400_temp-NEC)));
     real s_cq_2000 = (cstar^(-1))*(fmax(0, (z_cq_2000_temp-NEC)));
     real s_cq_10000 = (cstar^(-1))*(fmax(0, (z_cq_10000_temp-NEC)));
+    
+    //print("z_cq_400_temp: ", z_cq_400_temp, ", z_cq_2000_temp: ",
+    //z_cq_2000_temp, ", z_cq_10000_temp: ", z_cq_10000_temp);
+    //print("s_cq_400: ", s_cq_400, ", s_cq_2000: ",
+    //s_cq_2000, ", s_cq_10000: ", s_cq_10000);
+    
     //print("s_cq_400: ", s_cq_400, "s_cq_2000: ", s_cq_2000, 
     //"s_cq_10000: ", s_cq_10000)
     // equation that is either 0 or 1, 1 if the scaled length is > Lp
@@ -326,8 +334,8 @@ generated quantities {
   for(y in 2:22){ // every day from 2 to 21
       
     real z_ll_con_temp_rep = z_ll_con[y,1];
-    //real z_cq_con_temp_rep = z_con_cq[y,1]; // value from ode solver for cq
-    real s_cq_con_rep = 0; 
+    real z_cq_con_temp_rep = z_ll_con[y,2]; // value from ode solver for cq
+    real s_cq_con_rep = (cstar^(-1))*(fmax(0, (z_cq_con_temp_rep-NEC))); 
     real z_ll_400_temp_rep = z_ll_400[y,1];
     real z_cq_400_temp_rep = z_ll_400[y,2]; 
     real s_cq_400_rep = (cstar^(-1))*(fmax(0, (z_cq_400_temp_rep-NEC))); 

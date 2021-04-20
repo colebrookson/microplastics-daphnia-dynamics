@@ -74,7 +74,7 @@ gen_0_alltreat_onerep_fit =
        iter = total_iterations,
        #seed = 1,
        refresh = 500,
-       #verbose = TRUE,
+       verbose = TRUE,
        # init = list(
        #   list(`theta_ll[1]` = 0.2,
        #        `theta_cq[1]` = 1.5,
@@ -116,7 +116,7 @@ gen_0_alltreat_onerep_fit =
 saveRDS(gen_0_alltreat_onerep_fit, 
         here('/output/intermediate-objects/gen_0_alltreat_onerep_fit.RDS'))
 parms = c("theta_ll[1]", 
-          "theta_cq[1]", 
+          "theta_ll[2]", 
           "cstar", "NEC",
           "Lp", "Rm", "Lm", "tau_l", "tau_r")
 # diagnose model problems ======================================================
@@ -150,7 +150,7 @@ step_size = gen0_diagnostics %>%
 
 # look at output/make plots ====================================================
 print(gen_0_alltreat_onerep_fit, 
-      pars=c("theta_ll[1]", "theta_cq[1]", "cstar", "NEC",
+      pars=c("theta_ll[1]", "theta_ll[2]", "cstar", "NEC",
              "Lp", "Rm", "Lm", "tau_l", "tau_r"),
       probs=c(0.1, 0.5, 0.9), digits = 3)
 gen_0_alltreat_onerep_fit_Trace = stan_trace(gen_0_alltreat_onerep_fit,parms)
@@ -252,3 +252,18 @@ rep_len_plot = all_treat_reproduction + all_treat_length
 #print("L1[i]: ", L1[i]);
 #print("L2[i]: ", L2[i]);
 #print("L3[i]: ", L3[i]);
+
+
+funct = function(t, y, p){
+  cq = y[1]
+  
+  d_cq = ke*(2000-cq)
+  
+  return(list(d_cq))
+}
+ke = 2.0
+parms = c(ke)
+
+N0 = 0
+TT = seq(1,22,1) 
+results = lsoda(N0,TT,funct,parms)
