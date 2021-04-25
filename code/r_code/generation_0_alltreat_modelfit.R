@@ -115,6 +115,7 @@ gen_0_alltreat_onerep_fit =
        ); beep(3)
 saveRDS(gen_0_alltreat_onerep_fit, 
         here('/output/intermediate-objects/gen_0_alltreat_onerep_fit.RDS'))
+gen_0_alltreat_onerep_fit = readRDS(here('/output/intermediate-objects/gen_0_alltreat_onerep_fit.RDS'))
 parms = c("theta_ll[1]", 
           "theta_ll[2]", 
           "cstar", "NEC",
@@ -122,6 +123,12 @@ parms = c("theta_ll[1]",
 # diagnose model problems ======================================================
 plot(gen_0_alltreat_onerep_fit)
 check_divergences(gen_0_alltreat_onerep_fit)
+
+lp_fit = log_posterior(gen_0_alltreat_onerep_fit)
+np_fit = nuts_params(gen_0_alltreat_onerep_fit)
+posterior_fit = as.array(gen_0_alltreat_onerep_fit)
+
+mcmc_parcoord(posterior_fit, np = np_fit)
 
 gen0_diagnostics = get_sampler_params(gen_0_alltreat_onerep_fit) %>% 
   set_names(1:4) %>% 
@@ -150,7 +157,7 @@ step_size = gen0_diagnostics %>%
 
 # look at output/make plots ====================================================
 print(gen_0_alltreat_onerep_fit, 
-      pars=c("theta_ll[1]", "theta_ll[2]", "cstar", "NEC",
+      pars=c("theta_ll[1]", "theta_cq[1]", "cstar", "NEC",
              "Lp", "Rm", "Lm", "tau_l", "tau_r"),
       probs=c(0.1, 0.5, 0.9), digits = 3)
 gen_0_alltreat_onerep_fit_Trace = stan_trace(gen_0_alltreat_onerep_fit,parms)

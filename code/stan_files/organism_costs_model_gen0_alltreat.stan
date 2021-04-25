@@ -116,7 +116,7 @@ parameters {
   //real<lower = 0> sigma[2];   // error scale
 }
 transformed parameters {
-  
+
   real z_ll_con[22,2] = 
       integrate_ode_rk45(dll_con_dt, // function (defined above)
                          ll_init, // initial length value
@@ -153,8 +153,11 @@ transformed parameters {
                          rep_array(0.0, 0), 
                          rep_array(0, 0),
                           1e-5, 1e-3, 5e2);
+                        
 }
+
 model {
+  
   // definitions of values
   real R0[22];
   real eq0[22];
@@ -181,18 +184,10 @@ model {
   tau_r ~ gamma(0.001, 0.001);
 
   // do the reproduction estimation 
-    
-  R0[1] = 0; // initialization of cumulated reproduction for the control
-  eq0[1] = 0; // helper value/equation
-  R1[1] = 0; 
-  eq1[1] = 0;
-  R2[1] = 0; 
-  eq2[1] = 0;
-  R3[1] = 0; 
-  eq3[1] = 0;
+
   
-  for(y in 2:22){ // every day from 2 to 21
-      
+  for(y in 1:22){ // every day from 2 to 21
+  
     real z_ll_con_temp = z_ll_con[y,1];// value from the ode solver  for length
     real z_cq_con_temp = z_ll_con[y,2]; // value from ode solver for cq
     real z_ll_400_temp = z_ll_400[y,1];
@@ -236,6 +231,16 @@ model {
       eq3[y] = 0;
     else
       eq3[y] = 1;
+      
+        
+    R0[1] = 0; // initialization of cumulated reproduction for the control
+    eq0[1] = 0; // helper value/equation
+    R1[1] = 0; 
+    eq1[1] = 0;
+    R2[1] = 0; 
+    eq2[1] = 0;
+    R3[1] = 0; 
+    eq3[1] = 0;
      
     // cumulative reproduction at each time step
     R0[y] = R0[y-1] + eq0[y]*(Rm/(1-(Lp^3)))*
@@ -260,7 +265,8 @@ model {
                       ((1+z_ll_10000_temp)/(1+1))-(Lp^3))*
                       ((1+s_cq_10000)^-1);
                 
-    // fit R
+
+     // fit R
     r_y_con[y] ~ normal(R0[y], tau_r); // estimation step 
     r_y_400[y] ~ normal(R1[y], tau_r);
     r_y_2000[y] ~ normal(R2[y], tau_r);
@@ -271,7 +277,7 @@ model {
   // do the length estimation now
   
   for(i in 1:22){ // days
-      
+  
       real z_ll_con_temp = z_ll_con[i,1];
       real z_ll_400_temp = z_ll_400[i,1];
       real z_ll_2000_temp = z_ll_2000[i,1];
@@ -282,7 +288,7 @@ model {
       L2[i] = Lm*z_ll_2000_temp;
       L3[i] = Lm*z_ll_10000_temp;
       
-      // fit observed length
+
       l_y_obs_con[i] ~ normal(L0[i], tau_l);
       l_y_obs_400[i] ~ normal(L1[i], tau_l);
       l_y_obs_2000[i] ~ normal(L2[i], tau_l);

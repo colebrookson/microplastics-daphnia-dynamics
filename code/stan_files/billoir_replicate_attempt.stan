@@ -212,7 +212,7 @@ model {
   for(y in 2:21){ // every day from 2 to 21
       
     real z_ll_con_temp = z_ll_con[y,1];// value from the ode solver  for length
-    //real z_cq_con_temp = z_con_cq[y,1]; // value from ode solver for cq
+    real z_cq_con_temp = z_ll_con[y,2]; // value from ode solver for cq
     real z_ll_400_temp = z_ll_400[y,1];
     real z_cq_400_temp = z_ll_400[y,2]; 
     real z_ll_2000_temp = z_ll_2000[y,1];
@@ -220,7 +220,7 @@ model {
     real z_ll_10000_temp = z_ll_10000[y,1];
     real z_cq_10000_temp = z_ll_10000[y,2]; 
     
-    real s_cq_con = 0; 
+    real s_cq_con = (theta_ll[2]^(-1))*(fmax(0, (z_cq_con_temp-theta_ll[3]))); 
     real s_cq_400 = (theta_ll[2]^(-1))*(fmax(0, (z_cq_400_temp-theta_ll[3])));
     real s_cq_2000 = (theta_ll[2]^(-1))*(fmax(0, (z_cq_2000_temp-theta_ll[3])));
     real s_cq_10000 = (theta_ll[2]^(-1))*(fmax(0, (z_cq_10000_temp-theta_ll[3])));
@@ -351,8 +351,8 @@ generated quantities {
   for(y in 2:21){ // every day from 2 to 21
       
     real z_ll_con_temp_rep = z_ll_con[y,1];
-    //real z_cq_con_temp_rep = z_con_cq[y,1]; // value from ode solver for cq
-    real s_cq_con_rep = 0; 
+    real z_cq_con_temp_rep = z_ll_con[y,1]; // value from ode solver for cq
+    real s_cq_con_rep = (theta_ll[2]^(-1))*(fmax(0, (z_cq_con_temp_rep-theta_ll[3]))); 
     real z_ll_400_temp_rep = z_ll_400[y,1];
     real z_cq_400_temp_rep = z_ll_400[y,2]; 
     real s_cq_400_rep = (theta_ll[2]^(-1))*(fmax(0, (z_cq_400_temp_rep-theta_ll[3]))); 

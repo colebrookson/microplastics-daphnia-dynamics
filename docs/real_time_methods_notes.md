@@ -9,4 +9,8 @@ This document will serve as a home for notes (and citations) for tips I find alo
 
 ### 2021-04-15
 
-* Need to try rescaling - going to try the way it was suggested by a colleague, just doing it via the prior which, if it works, would be great. 
+* Need to try rescaling - going to try the way it was suggested by a colleague, just doing it via the prior which, if it works, would be great. UPDATE: this didn't work either
+
+### 2021-04-17
+
+* Going to re-try just completely replicating the WinBUGS script in Stan and see if I can get that to work
