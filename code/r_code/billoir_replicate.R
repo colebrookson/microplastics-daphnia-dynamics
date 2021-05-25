@@ -147,9 +147,9 @@ billoir_data = list(
   r_y_10000 = r_y_10000
 )
 # fit model ====================================================================
-warmups = 200
-total_iterations = 500
-max_treedepth = 10
+warmups = 10000
+total_iterations = 20000
+max_treedepth = 11
 adapt_delta = 0.999
 n_cores = 4
 n_chains = 4
@@ -206,9 +206,9 @@ print(billoir_fit,
 parms=c("theta_ll[1]", "theta_ll[2]", "theta_ll[3]", "theta_ll[4]",
        "Lp", "Rm", "Lm", "tau_l", "tau_r")
 gen_0_alltreat_onerep_fit_Trace = stan_trace(billoir_fit,parms)
-gen_0_alltreat_onerep_fit_Dens = stan_dens(billoir_fit,pars = parms)
-gen_0_alltreat_onerep_fit_Overlay = mcmc_dens_overlay(billoir_fit,parms)
-gen_0_alltreat_onerep_fit_Violin = mcmc_vio(billoir_fit,parms,
+gen_0_alltreat_onerep_fit_Dens = mcmc_dens(gen_0_alltreat_onerep_fit,parms)
+gen_0_alltreat_onerep_fit_Overlay = mcmc_dens_overlay(gen_0_alltreat_onerep_fit,parms)
+gen_0_alltreat_onerep_fit_Violin = mcmc_violin(gen_0_alltreat_onerep_fit,parms,
                                                probs = c(0.1, 0.5, 0.9))
 
 gen_0_alltreat_output = rstan::extract(billoir_fit,
