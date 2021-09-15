@@ -90,6 +90,25 @@ repc3 = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.00,0.00,0.00,
           10.15,1.50,3.28,10.15,1.90,3.28,10.15,1.90,3.28,10.15,3.23,
           3.28,10.15,4.90,3.28)
 
+# note ####################################################################
+# since the dimensions of the reproduction data are weird (it's 21,3) so it
+# goes day 7, 14, 21, 7 14, 21, etc, we need to fix this so the data are 
+# organized properly 
+# end note ################################################################
+
+split_reproduction_data = function(data) {
+     
+            # go through some gross inefficient loop to pull out the values
+            # and put them in three objects then make three objects into
+            # df columns then return the df
+}
+
+
+
+
+
+
+
 
 
 
